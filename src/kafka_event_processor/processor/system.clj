@@ -81,6 +81,8 @@
            additional-dependencies {}}}]
   (let [processor-name
         (name processor-identifier)
+        event-handler
+        (or event-handler (->keyword [processor-name "-event-handler"]))
         processing-enabled
         (or processing-enabled (->keyword [processor-name "-processing-enabled?"]))
         kafka-consumer-group-configuration
@@ -126,9 +128,8 @@
             {:kafka                kafka
              :configuration        processor-configuration
              :kafka-consumer-group kafka-consumer-group
-             :database             database}
+             :database             database
+             :event-handler        event-handler}
             (when (some? rewind-check)
               {:rewind-check rewind-check})
-            (when (some? event-handler)
-              {:event-handler event-handler})
             additional-dependencies))))))
