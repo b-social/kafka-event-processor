@@ -16,7 +16,7 @@ Allows for multiple processors configured in different ways.
 Add the following to your `project.clj` file:
 
 ```clj
-[b-social/kafka-event-processor "0.1.3"]
+[b-social/kafka-event-processor "0.1.4"]
 ```
 
 ## Documentation
