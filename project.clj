@@ -13,8 +13,7 @@
                  [org.apache.kafka/kafka-clients "2.3.0"]
                  [cambium/cambium.core "0.9.3"]
                  [cambium/cambium.codec-cheshire "0.9.3"]
-                 [org.clojure/java.jdbc "0.7.11"]
-                 [halboy "5.1.0"]]
+                 [org.clojure/java.jdbc "0.7.11"]]
 
   :plugins [[lein-cloverage "1.1.2"]
             [lein-shell "0.5.0"]
@@ -37,7 +36,8 @@
                        [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.4"]
                        [hikari-cp "2.12.0"]
                        [b-social/jason "0.1.5"]
-                       [b-social/vent "0.6.5"]]
+                       [b-social/vent "0.6.5"]
+                       [halboy "5.1.0"]]
                     :eftest {:multithread? false}}}
 
   :cloverage

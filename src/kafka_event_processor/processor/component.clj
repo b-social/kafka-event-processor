@@ -1,12 +1,11 @@
 (ns kafka-event-processor.processor.component
   (:require [com.stuartsierra.component :as component]
             [kafka-event-processor.utils.logging :as log]
-            [kafka-event-processor.kafka.consumer :as kafka-consumer]
+            [kafka-event-processor.processor.consumer :as kafka-consumer]
             [clojure.java.jdbc :as jdbc]
             [kafka-event-processor.utils.generators :as generate]
-            [kafka-event-processor.processor.source
-             :refer [event->topic-and-id
-                     event-resource->id]]))
+            [kafka-event-processor.processor.protocols
+             :refer [processable? on-event on-complete rewind-required?]]))
 
 (defn- milliseconds [millis] millis)
 
@@ -15,56 +14,34 @@
      ~@body
      (Thread/sleep ~millis)))
 
-(defprotocol RewindCheck
-  "A handler that is called to define whether the kafka topic needs rewinding"
-  :extend-via-metadata true
-  (rewind-required? [this processor] "A callback to decide if a rewind is required"))
-
-(defprotocol IdempotentCheck
-  "A handler that is called to define whether the message can be processed"
-  :extend-via-metadata true
-  (processable? [this database topic event-id] "A callback to decide if an event should be processed"))
-
-(defprotocol EventHandler
-  "A handler that is called when at certain points in an events lifecycle"
-  :extend-via-metadata true
-  (on-event [this processor event event-context] "A callback for processing an event")
-  (on-complete [this processor event event-context] "A callback for when an event has finished processing"))
-
 (defn- process-events-once
-  [{:keys [configuration kafka-consumer database event-processor
-           ^IdempotentCheck idempotent-check ^EventHandler event-handler]
+  [{:keys [configuration kafka-consumer database event-processor event-handler]
     :as   processor}]
   (log/log-debug
     {:event-processor event-processor
      :assignments     (kafka-consumer/assignments kafka-consumer)}
     "Checking for new event batch.")
   (let [{:keys [timeout]} configuration
-        events (kafka-consumer/get-new-events kafka-consumer timeout)
-        event-identifiers (map event->topic-and-id events)
+        events (kafka-consumer/get-new-events kafka-consumer timeout event-handler)
         event-processing-batch-id (generate/uuid)
         event-processing-batch-context
         {:event-processor           event-processor
-         :event-processing-batch-id event-processing-batch-id
-         :event-identifiers         event-identifiers}]
+         :event-processing-batch-id event-processing-batch-id}]
     (when (pos? (count events))
       (log/log-info event-processing-batch-context
         "Starting processing of event batch.")
-      (doseq [{:keys [topic resource] :as event} events
-              :let [event-id (event-resource->id resource)
-                    event-identifier (event->topic-and-id topic event-id)
-                    event-context
-                    {:event-id                  event-id
-                     :event-processor           event-processor
-                     :event-processing-batch-id event-processing-batch-id
-                     :event-identifier          event-identifier}]]
+      (doseq [event events
+              :let [event-context
+                    {:event-processor           event-processor
+                     :event-processing-batch-id event-processing-batch-id}]]
         (try
           (log/log-info event-context "Starting processing of event.")
           (jdbc/with-db-transaction [transaction (:handle database)]
-            (let [database (assoc database :handle transaction)]
+            (let [database (assoc database :handle transaction)
+                  processor (assoc processor :database database)]
               (if (or
-                    (nil? idempotent-check)
-                    (processable? idempotent-check database topic event-id))
+                    (nil? event-handler)
+                    (processable? event-handler processor event event-context))
                 (do
                   (log/log-info event-context
                     "Continuing processing of event: not yet processed.")
@@ -86,7 +63,7 @@
         "Completed processing of event batch."))))
 
 (defn- process-events-forever
-  [{:keys [configuration kafka-consumer-group ^RewindCheck rewind-check event-processor]
+  [{:keys [configuration kafka-consumer-group rewind-check event-processor]
     :as   processor}]
   (let [{:keys [interval]} configuration
         on-partitions-assigned

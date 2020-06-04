@@ -10,7 +10,7 @@
     [halboy.json :as hal-json]
     [jason.convenience :refer [->wire-json]]
     [kafka-event-processor.test-support.kafka.producer :as producer])
-  (:import [kafka_event_processor.processor.component EventHandler]))
+  (:import [kafka_event_processor.processor.protocols EventHandler]))
 
 (let [database (database/new-database)
       kafka (kafka/new-kafka)

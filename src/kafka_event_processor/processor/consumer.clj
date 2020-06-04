@@ -1,16 +1,14 @@
-(ns kafka-event-processor.kafka.consumer
+(ns kafka-event-processor.processor.consumer
   (:require
-    [halboy.resource :as hal]
-    [halboy.json :as hal-json]
-
     [kafka-event-processor.utils.logging :as log]
     [kafka-event-processor.utils.properties :refer [map->properties]]
-    [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group])
+    [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
+    [kafka-event-processor.processor.protocols :refer [extract-payload]])
   (:import
     [org.apache.kafka.clients.consumer KafkaConsumer
-     ConsumerRebalanceListener
-     ConsumerRecord
-     ConsumerRecords]
+                                       ConsumerRebalanceListener
+                                       ConsumerRecord
+                                       ConsumerRecords]
     [org.apache.kafka.common TopicPartition]
     [java.util Collection]
     [java.time Duration]))
@@ -19,22 +17,22 @@
   ConsumerRebalanceListener
   (onPartitionsRevoked [_ topic-partitions]
     ((or (:on-partitions-revoked callbacks) (fn [_ _]))
-      kafka-consumer topic-partitions))
+     kafka-consumer topic-partitions))
   (onPartitionsAssigned [_ topic-partitions]
     ((or (:on-partitions-assigned callbacks) (fn [_ _]))
-      kafka-consumer topic-partitions)))
+     kafka-consumer topic-partitions)))
 
 (defn ^:no-doc new-consumer
   ([config topics]
-    (new-consumer config topics {}))
+   (new-consumer config topics {}))
   ([config ^Collection topics callbacks]
-    (let [props (map->properties config)
-          consumer (KafkaConsumer. props)
-          kafka-consumer {:handle consumer :topics topics}]
-      (.subscribe consumer topics
-        ^ConsumerRebalanceListener
-        (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
-      kafka-consumer)))
+   (let [props (map->properties config)
+         consumer (KafkaConsumer. props)
+         kafka-consumer {:handle consumer :topics topics}]
+     (.subscribe consumer topics
+       ^ConsumerRebalanceListener
+       (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
+     kafka-consumer)))
 
 (defn ^:no-doc stop-consumer [consumer]
   (try
@@ -60,15 +58,11 @@
          (stop-consumer consumer#)))))
 
 (defn- extract-event-resource
-  [^ConsumerRecord record]
-  (-> record
-    (.value)
-    (hal-json/json->resource)
-    (hal/get-property :payload)
-    (hal-json/json->resource)))
+  [^ConsumerRecord record event-handler]
+  (extract-payload event-handler (.value record)))
 
 (defn- extract-events-for-topic
-  [^ConsumerRecords consumer-records ^String topic]
+  [^ConsumerRecords consumer-records event-handler ^String topic]
   (let [records (->
                   (.records consumer-records topic)
                   (.iterator)
@@ -78,16 +72,16 @@
         {:topic     topic
          :offset    (.offset record)
          :partition (.partition record)
-         :resource  (extract-event-resource record)})
+         :payload   (extract-event-resource record event-handler)})
       records)))
 
 (defn get-new-events
   "Reads events from kafka."
-  [{:keys [^KafkaConsumer handle topics]} timeout]
+  [{:keys [^KafkaConsumer handle topics]} timeout event-handler]
   (let [records (.poll handle (Duration/ofMillis timeout))
         events
         (mapcat
-          (partial extract-events-for-topic records)
+          (partial extract-events-for-topic records event-handler)
           topics)]
     events))
 

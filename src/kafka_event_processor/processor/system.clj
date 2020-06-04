@@ -41,31 +41,39 @@
      {:processor-identifier    :main
       :kafka                   :kafka
       :database                :database
-      :event-handler           :event-handle
+      :event-handler           :event-handler
       :additional-dependencies {:atom :atom}})
    ````
 
    Nothing is done with the event if an event-handler is not defined.
 
    ````
-   (deftype AtomEventHandler
-     [atom]
-     EventHandler
-     (on-event
-        [this processor {:keys [topic resource]} _]
-        (vent/react-to all {:channel topic :payload resource} processor))
-     (on-complete
-        [this processor {:keys [topic partition]} {:keys [event-processor event-id]}]
-        (swap! atom conj {:processor event-processor
-                          :topic     topic
-                          :partition partition
-                          :event-id  event-id})))
-   ````
-   "
+  (deftype AtomEventHandler
+    [atom]
+    EventHandler
+    (extract-payload
+      [this event]
+      (-> event
+        (hal-json/json->resource)
+        (hal/get-property :payload)
+        (hal-json/json->resource)))
+    (processable?
+      [this processor event event-context]
+      true)
+    (on-event
+      [this processor {:keys [topic payload]} _]
+      (vent/react-to all {:channel topic :payload payload} processor))
+    (on-complete
+      [this processor {:keys [topic partition payload]} {:keys [event-processor]}]
+      (swap! atom conj {:processor event-processor
+                        :topic     topic
+                        :partition partition
+                        :event-id  (event-resource->id payload)})))
+  ````"
   [configuration-overrides
    {:keys [kafka database processor-identifier configuration-prefix additional-dependencies
            processing-enabled kafka-consumer-group-configuration kafka-consumer-group
-           processor-configuration processor rewind-check idempotent-check event-handler]
+           processor-configuration processor rewind-check event-handler]
     :or   {kafka                   :kafka
            database                :database
            processor-identifier    :main
@@ -121,8 +129,6 @@
              :database             database}
             (when (some? rewind-check)
               {:rewind-check rewind-check})
-            (when (some? idempotent-check)
-              {:idempotent-check idempotent-check})
             (when (some? event-handler)
               {:event-handler event-handler})
             additional-dependencies))))))

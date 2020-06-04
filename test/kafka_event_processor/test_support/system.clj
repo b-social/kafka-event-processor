@@ -6,9 +6,6 @@
     [kafka-event-processor.kafka.system :as kafka-system]
     [kafka-event-processor.processor.system :as processors]
     [vent.core :as vent]
-    [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
-    [kafka-event-processor.utils.generators :as generators]
-    [kafka-event-processor.processor.configuration :as config]
     [configurati.core
      :refer [define-configuration
              with-source
@@ -18,8 +15,10 @@
     [kafka-event-processor.test-support.kafka.combined :as kafka]
     [freeport.core :refer [get-free-port!]]
     [vent.hal :as vent-hal]
-    [halboy.resource :as hal])
-  (:import [kafka_event_processor.processor.component EventHandler]))
+    [halboy.resource :as hal]
+    [halboy.json :as hal-json]
+    [kafka-event-processor.processor.protocols :refer [EventHandler]]
+    [clojure.string :as string]))
 
 (defn with-system-lifecycle [system-atom]
   (fn [f]
@@ -48,18 +47,38 @@
       (vent/gather test-gather)
       (vent/act test-act))))
 
+
+(defn- event-resource->id-from-href
+  [event-resource href]
+  (let [href (hal/get-href event-resource href)]
+    (when-not (nil? href) (last (string/split href #"/")))))
+
+(defn- event-resource->id
+  "Get the id from the event resource"
+  [event-resource]
+  (event-resource->id-from-href event-resource :self))
+
 (deftype AtomEventHandler
   [atom]
   EventHandler
+  (extract-payload
+    [this event]
+    (-> event
+      (hal-json/json->resource)
+      (hal/get-property :payload)
+      (hal-json/json->resource)))
+  (processable?
+    [this processor event event-context]
+    true)
   (on-event
-    [this processor {:keys [topic resource]} _]
-    (vent/react-to all {:channel topic :payload resource} processor))
+    [this processor {:keys [topic payload]} _]
+    (vent/react-to all {:channel topic :payload payload} processor))
   (on-complete
-    [this processor {:keys [topic partition]} {:keys [event-processor event-id]}]
+    [this processor {:keys [topic partition payload]} {:keys [event-processor]}]
     (swap! atom conj {:processor event-processor
                       :topic     topic
                       :partition partition
-                      :event-id  event-id})))
+                      :event-id  (event-resource->id payload)})))
 
 (defn new-system
   ([] (new-system {}))
