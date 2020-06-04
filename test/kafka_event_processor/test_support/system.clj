@@ -30,12 +30,6 @@
       (finally
         (reset! system-atom (component/stop-system @system-atom))))))
 
-(deftype AtomEventHandler
-  [atom]
-  EventHandler
-  (on-complete [this database cursor]
-    (swap! atom conj cursor)))
-
 (defn test-act []
   (vent/action [{:keys [id message atom]}]
     (swap! atom conj {:id id :message message})))
@@ -53,6 +47,19 @@
     (vent/on-type :test
       (vent/gather test-gather)
       (vent/act test-act))))
+
+(deftype AtomEventHandler
+  [atom]
+  EventHandler
+  (on-event
+    [this processor {:keys [topic resource]} _]
+    (vent/react-to all {:channel topic :payload resource} processor))
+  (on-complete
+    [this processor {:keys [topic partition]} {:keys [event-processor event-id]}]
+    (swap! atom conj {:processor event-processor
+                      :topic     topic
+                      :partition partition
+                      :event-id  event-id})))
 
 (defn new-system
   ([] (new-system {}))
@@ -72,8 +79,6 @@
           :database-configuration})
        :event-handler
        (AtomEventHandler. (atom []))
-       :ruleset
-       all
        :atom
        (atom []))
      (kafka-system/new-system
@@ -85,7 +90,6 @@
         :kafka                   :kafka
         :database                :database
         :event-handler           :event-handler
-        :ruleset                 :ruleset
         :additional-dependencies {:atom :atom}}))))
 
 

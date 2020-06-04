@@ -3,7 +3,6 @@
 A libary to process kafka events making a number of choices
 
 - Using stuartsierra components
-- Using vent
 - Event processing is wrapped in a jdbc transaction   
 - Configured using environment variables from configurati
 - Logs using cambium

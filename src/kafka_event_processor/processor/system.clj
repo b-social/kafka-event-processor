@@ -23,7 +23,6 @@
 
    * kafka: kafka
    * database: database
-   * ruleset: {processor-identifier}-ruleset
    * processing-enabled: {processor-identifier}-processing-enabled?
    * kafka-consumer-group-configuration: kafka-{processor-identifier}-consumer-group-configuration
    * kafka-consumer-group: kafka-{processor-identifier}-consumer-group
@@ -43,15 +42,30 @@
       :kafka                   :kafka
       :database                :database
       :event-handler           :event-handle
-      :ruleset                 :ruleset
       :additional-dependencies {:atom :atom}})
+   ````
+
+   Nothing is done with the event if an event-handler is not defined.
+
+   ````
+   (deftype AtomEventHandler
+     [atom]
+     EventHandler
+     (on-event
+        [this processor {:keys [topic resource]} _]
+        (vent/react-to all {:channel topic :payload resource} processor))
+     (on-complete
+        [this processor {:keys [topic partition]} {:keys [event-processor event-id]}]
+        (swap! atom conj {:processor event-processor
+                          :topic     topic
+                          :partition partition
+                          :event-id  event-id})))
    ````
    "
   [configuration-overrides
    {:keys [kafka database processor-identifier configuration-prefix additional-dependencies
            processing-enabled kafka-consumer-group-configuration kafka-consumer-group
-           processor-configuration processor rewind-check idempotent-check event-handler
-           ruleset]
+           processor-configuration processor rewind-check idempotent-check event-handler]
     :or   {kafka                   :kafka
            database                :database
            processor-identifier    :main
@@ -59,8 +73,6 @@
            additional-dependencies {}}}]
   (let [processor-name
         (name processor-identifier)
-        ruleset
-        (or ruleset (->keyword [processor-name "-ruleset"]))
         processing-enabled
         (or processing-enabled (->keyword [processor-name "-processing-enabled?"]))
         kafka-consumer-group-configuration
@@ -106,8 +118,7 @@
             {:kafka                kafka
              :configuration        processor-configuration
              :kafka-consumer-group kafka-consumer-group
-             :database             database
-             :ruleset              ruleset}
+             :database             database}
             (when (some? rewind-check)
               {:rewind-check rewind-check})
             (when (some? idempotent-check)

@@ -6,8 +6,7 @@
             [kafka-event-processor.utils.generators :as generate]
             [kafka-event-processor.processor.source
              :refer [event->topic-and-id
-                     event-resource->id]]
-            [vent.core :as vent]))
+                     event-resource->id]]))
 
 (defn- milliseconds [millis] millis)
 
@@ -29,10 +28,11 @@
 (defprotocol EventHandler
   "A handler that is called when at certain points in an events lifecycle"
   :extend-via-metadata true
-  (on-complete [this database cursor] "A callback for when an event has finished processing with metadata about that event"))
+  (on-event [this processor event event-context] "A callback for processing an event")
+  (on-complete [this processor event event-context] "A callback for when an event has finished processing"))
 
 (defn- process-events-once
-  [{:keys [configuration kafka-consumer database ruleset event-processor
+  [{:keys [configuration kafka-consumer database event-processor
            ^IdempotentCheck idempotent-check ^EventHandler event-handler]
     :as   processor}]
   (log/log-debug
@@ -50,11 +50,12 @@
     (when (pos? (count events))
       (log/log-info event-processing-batch-context
         "Starting processing of event batch.")
-      (doseq [{:keys [topic resource partition] :as event} events
+      (doseq [{:keys [topic resource] :as event} events
               :let [event-id (event-resource->id resource)
                     event-identifier (event->topic-and-id topic event-id)
                     event-context
-                    {:event-processor           event-processor
+                    {:event-id                  event-id
+                     :event-processor           event-processor
                      :event-processing-batch-id event-processing-batch-id
                      :event-identifier          event-identifier}]]
         (try
@@ -67,12 +68,9 @@
                 (do
                   (log/log-info event-context
                     "Continuing processing of event: not yet processed.")
-                  (vent/react-to ruleset {:channel topic :payload resource} processor)
                   (when (some? event-handler)
-                    (on-complete event-handler database {:processor event-processor
-                                                         :topic     topic
-                                                         :partition partition
-                                                         :event-id  event-id}))
+                    (on-event event-handler processor event event-context)
+                    (on-complete event-handler processor event event-context))
                   (log/log-info event-context "Completed processing of event."))
                 (log/log-warn event-context
                   "Skipping processing of event: already processed."))))
