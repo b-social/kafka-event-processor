@@ -66,9 +66,7 @@
                 (do
                   (log/log-info event-context
                     "Continuing processing of event: not yet processed.")
-                  (vent/react-to ruleset
-                    {:channel topic :payload resource}
-                    (into {} processor))
+                  (vent/react-to ruleset {:channel topic :payload resource} processor)
                   (on-complete event-handler database {:processor event-processor
                                                      :topic     topic
                                                      :partition partition
@@ -105,7 +103,8 @@
               (kafka-consumer/seek-to-beginning consumer topic-partitions))))
         kafka-consumer-group
         (assoc kafka-consumer-group
-          :callbacks {:on-partitions-assigned on-partitions-assigned})]
+          :callbacks {:on-partitions-assigned on-partitions-assigned})
+        processor-as-map (into {} [processor])]
     (kafka-consumer/with-consumer [kafka-consumer kafka-consumer-group]
       (log/log-info
         {:event-processor event-processor
@@ -114,7 +113,7 @@
       (every
         (milliseconds interval)
         (try
-          (process-events-once (assoc processor :kafka-consumer kafka-consumer))
+          (process-events-once (assoc processor-as-map :kafka-consumer kafka-consumer))
           (catch Throwable exception
             (log/log-error
               {:event-processor event-processor}
