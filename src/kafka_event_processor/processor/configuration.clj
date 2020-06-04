@@ -1,4 +1,4 @@
-(ns kafka-event-processor.processor.configuration
+(ns ^:no-doc kafka-event-processor.processor.configuration
   (:require
     [configurati.core
      :refer [define-configuration

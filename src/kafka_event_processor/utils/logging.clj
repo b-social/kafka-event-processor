@@ -2,17 +2,7 @@
   (:require
     [cambium.core :as log]))
 
-
-(defmacro log-debug [context formatted-string]
-  `(log/log :debug ~context nil ~formatted-string))
-
-(defmacro log-info [context formatted-string]
-  `(log/log :info ~context nil ~formatted-string))
-
-(defmacro log-warn [context formatted-string]
-  `(log/log :warn ~context nil ~formatted-string))
-
-(defn get-error-context [context ^Throwable exception]
+(defn ^:no-doc get-error-context [context ^Throwable exception]
   (let [exception-class-name (.getCanonicalName (class exception))
         exception-stacktrace (map str (.getStackTrace exception))
         exception-description (str exception)]
@@ -23,6 +13,16 @@
        :exception-description exception-description
        :exception             exception}
       context)))
+
+(defmacro log-debug
+  [context formatted-string]
+  `(log/log :debug ~context nil ~formatted-string))
+
+(defmacro log-info [context formatted-string]
+  `(log/log :info ~context nil ~formatted-string))
+
+(defmacro log-warn [context formatted-string]
+  `(log/log :warn ~context nil ~formatted-string))
 
 (defmacro log-error
   ([context formatted-string]

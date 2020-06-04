@@ -12,6 +12,41 @@
   (keyword (apply str parts)))
 
 (defn new-system
+  "Creates a new kafka event processor.
+
+   Does nothing if processing is not enabled.
+
+   * Processor identifier can be specified (defaults to :main).
+   * Configuration prefix can be specified (defaults to :service).
+
+   All system map keys can be overridden or they default where applicable:
+
+   * kafka: kafka
+   * database: database
+   * ruleset: {processor-identifier}-ruleset
+   * processing-enabled: {processor-identifier}-processing-enabled?
+   * kafka-consumer-group-configuration: kafka-{processor-identifier}-consumer-group-configuration
+   * kafka-consumer-group: kafka-{processor-identifier}-consumer-group
+   * processor-configuration: {processor-identifier}-processor-configuration
+   * processor: {processor-identifier}-processor
+
+   Optionally provide a system map key for rewind-check idempotent-check and event-handler
+   
+   Optional provide a map of system keys that are used as additional dependencies to the component
+
+   e.g.
+
+   ````
+   (processors/new-system
+     configuration-overrides
+     {:processor-identifier    :main
+      :kafka                   :kafka
+      :database                :database
+      :event-handler           :event-handle
+      :ruleset                 :ruleset
+      :additional-dependencies {:atom :atom}})
+   ````
+   "
   [configuration-overrides
    {:keys [kafka database processor-identifier configuration-prefix additional-dependencies
            processing-enabled kafka-consumer-group-configuration kafka-consumer-group

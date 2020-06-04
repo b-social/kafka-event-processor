@@ -14,7 +14,8 @@
                  [cambium/cambium.core "0.9.3"]
                  [cambium/cambium.codec-cheshire "0.9.3"]
                  [org.clojure/java.jdbc "0.7.11"]
-                 [halboy "5.1.0"]]
+                 [halboy "5.1.0"]
+                 [b-social/vent "0.6.5"]]
 
   :plugins [[lein-cloverage "1.1.2"]
             [lein-shell "0.5.0"]

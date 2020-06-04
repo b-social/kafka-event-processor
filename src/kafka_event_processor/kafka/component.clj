@@ -1,4 +1,4 @@
-(ns kafka-event-processor.kafka.component
+(ns ^:no-doc kafka-event-processor.kafka.component
   (:require
     [clojure.string :as str]
 

@@ -5,30 +5,31 @@
             [clojure.java.jdbc :as jdbc]
             [kafka-event-processor.utils.generators :as generate]
             [kafka-event-processor.processor.source
-             :refer [event->topic
-                     event->partition
-                     event->topic-and-id
+             :refer [event->topic-and-id
                      event-resource->id]]
             [vent.core :as vent]))
 
 (defn- milliseconds [millis] millis)
 
-(defmacro every [millis & body]
+(defmacro ^:no-doc every [millis & body]
   `(while (not (Thread/interrupted))
      ~@body
      (Thread/sleep ~millis)))
 
 (defprotocol RewindCheck
+  "A handler that is called to define whether the kafka topic needs rewinding"
   :extend-via-metadata true
-  (rewind-required? [this processor]))
+  (rewind-required? [this processor] "A callback to decide if a rewind is required"))
 
 (defprotocol IdempotentCheck
+  "A handler that is called to define whether the message can be processed"
   :extend-via-metadata true
-  (processable? [this database topic event-id]))
+  (processable? [this database topic event-id] "A callback to decide if an event should be processed"))
 
 (defprotocol EventHandler
+  "A handler that is called when at certain points in an events lifecycle"
   :extend-via-metadata true
-  (on-complete [this database cursor]))
+  (on-complete [this database cursor] "A callback for when an event has finished processing with metadata about that event"))
 
 (defn- process-events-once
   [{:keys [configuration kafka-consumer database ruleset event-processor
@@ -67,10 +68,11 @@
                   (log/log-info event-context
                     "Continuing processing of event: not yet processed.")
                   (vent/react-to ruleset {:channel topic :payload resource} processor)
-                  (on-complete event-handler database {:processor event-processor
-                                                     :topic     topic
-                                                     :partition partition
-                                                     :event-id  event-id})
+                  (when (some? event-handler)
+                    (on-complete event-handler database {:processor event-processor
+                                                         :topic     topic
+                                                         :partition partition
+                                                         :event-id  event-id}))
                   (log/log-info event-context "Completed processing of event."))
                 (log/log-warn event-context
                   "Skipping processing of event: already processed."))))
@@ -134,5 +136,6 @@
       (future-cancel processor))
     (dissoc component :processor)))
 
-(defn new-processor [event-processor]
+(defn ^:no-doc new-processor
+  [event-processor]
   (map->Processor {:event-processor event-processor}))

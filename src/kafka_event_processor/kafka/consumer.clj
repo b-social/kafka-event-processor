@@ -24,7 +24,7 @@
     ((or (:on-partitions-assigned callbacks) (fn [_ _]))
       kafka-consumer topic-partitions)))
 
-(defn new-consumer
+(defn ^:no-doc new-consumer
   ([config topics]
     (new-consumer config topics {}))
   ([config ^Collection topics callbacks]
@@ -36,7 +36,7 @@
         (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
       kafka-consumer)))
 
-(defn stop-consumer [consumer]
+(defn ^:no-doc stop-consumer [consumer]
   (try
     (log/log-info {:topics (:topics consumer)}
       "Stopping kafka consumer.")
@@ -59,7 +59,7 @@
        (finally
          (stop-consumer consumer#)))))
 
-(defn extract-event-resource
+(defn- extract-event-resource
   [^ConsumerRecord record]
   (-> record
     (.value)
@@ -67,7 +67,7 @@
     (hal/get-property :payload)
     (hal-json/json->resource)))
 
-(defn extract-events-for-topic
+(defn- extract-events-for-topic
   [^ConsumerRecords consumer-records ^String topic]
   (let [records (->
                   (.records consumer-records topic)
@@ -82,6 +82,7 @@
       records)))
 
 (defn get-new-events
+  "Reads events from kafka."
   [{:keys [^KafkaConsumer handle topics]} timeout]
   (let [records (.poll handle (Duration/ofMillis timeout))
         events
@@ -90,21 +91,28 @@
           topics)]
     events))
 
-(defn assignments [kafka-consumer]
+(defn assignments
+  "Gets assignment from a KafkaConsumer"
+  [kafka-consumer]
   (let [^KafkaConsumer handle (:handle kafka-consumer)]
     (.assignment handle)))
 
-(defn seek-to-offset [kafka-consumer event]
+(defn seek-to-offset
+  "Seek to the offset of a specific event in a Kafka topic"
+  [kafka-consumer event]
   (let [^KafkaConsumer handle (:handle kafka-consumer)
         partition (TopicPartition. (:topic event) (:partition event))
         ^long offset (:offset event)]
     (.seek handle partition offset)))
 
-(defn seek-to-beginning [kafka-consumer topic-partitions]
+(defn seek-to-beginning
+  "Seek to the beginning of a Kafka topic"
+  [kafka-consumer topic-partitions]
   (let [^KafkaConsumer handle (:handle kafka-consumer)]
     (.seekToBeginning handle topic-partitions)
     (run! #(.position handle %) topic-partitions)))
 
 (defn commit-offset
+  "Commit the offset to a KafkaConsumer"
   [{:keys [^KafkaConsumer handle]}]
   (.commitSync handle))

@@ -4,17 +4,17 @@
 
     [halboy.resource :as hal]))
 
-(defn event-resource->id-from-href [event-resource href]
+(defn- event-resource->id-from-href
+  [event-resource href]
   (let [href (hal/get-href event-resource href)]
     (when-not (nil? href) (last (string/split href #"/")))))
 
-(defn event-resource->id [event-resource]
+(defn event-resource->id
+  "Get the id from the event resource"
+  [event-resource]
   (event-resource->id-from-href event-resource :self))
 
-(def event->topic :topic)
-(def event->partition :partition)
-(def event->event-resource :resource)
-(def event->id (comp event-resource->id event->event-resource))
-
-(defn event->topic-and-id [topic event-id]
+(defn event->topic-and-id
+  "Convert the topic and event id into a key"
+  [topic event-id]
   (format "%s:%s" topic event-id))
