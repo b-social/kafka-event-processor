@@ -21,15 +21,16 @@
 
    All system map keys can be overridden or they default where applicable:
 
-   * kafka: kafka
-   * database: database
+   * kafka: kafka (mandatory)
+   * database: database (mandatory)
+   * event-handler: {processor-identifier}-event-handler (mandatory)
    * processing-enabled: {processor-identifier}-processing-enabled?
    * kafka-consumer-group-configuration: kafka-{processor-identifier}-consumer-group-configuration
    * kafka-consumer-group: kafka-{processor-identifier}-consumer-group
    * processor-configuration: {processor-identifier}-processor-configuration
    * processor: {processor-identifier}-processor
 
-   Optionally provide a system map key for rewind-check idempotent-check and event-handler
+   Optionally provide a system map key for rewind-check
    
    Optional provide a map of system keys that are used as additional dependencies to the component
 
