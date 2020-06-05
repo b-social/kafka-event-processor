@@ -39,15 +39,12 @@
           (jdbc/with-db-transaction [transaction (:handle database)]
             (let [database (assoc database :handle transaction)
                   processor (assoc processor :database database)]
-              (if (or
-                    (nil? event-handler)
-                    (processable? event-handler processor event event-context))
+              (if (processable? event-handler processor event event-context)
                 (do
                   (log/log-info event-context
                     "Continuing processing of event: not yet processed.")
-                  (when (some? event-handler)
-                    (on-event event-handler processor event event-context)
-                    (on-complete event-handler processor event event-context))
+                  (on-event event-handler processor event event-context)
+                  (on-complete event-handler processor event event-context)
                   (log/log-info event-context "Completed processing of event."))
                 (log/log-warn event-context
                   "Skipping processing of event: already processed."))))
