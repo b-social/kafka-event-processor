@@ -5,7 +5,7 @@
             [clojure.java.jdbc :as jdbc]
             [kafka-event-processor.utils.generators :as generate]
             [kafka-event-processor.processor.protocols
-             :refer [processable? on-event on-complete rewind-required?]]))
+             :refer [processable? on-event on-complete on-exception rewind-required?]]))
 
 (defn- milliseconds [millis] millis)
 
@@ -28,36 +28,37 @@
         {:event-processor           event-processor
          :event-processing-batch-id event-processing-batch-id}]
     (when (pos? (count events))
-      (log/log-info event-processing-batch-context
-        "Starting processing of event batch.")
+      (log/log-debug event-processing-batch-context "Starting processing of event batch.")
       (doseq [event events
               :let [event-context
                     {:event-processor           event-processor
                      :event-processing-batch-id event-processing-batch-id}]]
         (try
-          (log/log-info event-context "Starting processing of event.")
+          (log/log-debug event-context "Starting processing of event.")
           (jdbc/with-db-transaction [transaction (:handle database)]
             (let [database (assoc database :handle transaction)
                   processor (assoc processor :database database)]
               (if (processable? event-handler processor event event-context)
-                (do
-                  (log/log-info event-context
+                (try
+                  (log/log-debug event-context
                     "Continuing processing of event: not yet processed.")
                   (on-event event-handler processor event event-context)
                   (on-complete event-handler processor event event-context)
-                  (log/log-info event-context "Completed processing of event."))
-                (log/log-warn event-context
+                  (log/log-debug event-context "Completed processing of event.")
+                  (catch Exception e
+                    (log/log-debug event-context "Processing of event caused an exception." e)
+                    (on-exception event-handler processor event event-context e)))
+                (log/log-debug event-context
                   "Skipping processing of event: already processed."))))
           (catch Throwable exception
-            (log/log-error
+            (log/log-error 
               event-context
-              "Error processing event."
+              "Uncaught exception during processing of event. Retrying."
               exception)
             (kafka-consumer/seek-to-offset kafka-consumer event)
             (throw exception))))
       (kafka-consumer/commit-offset kafka-consumer)
-      (log/log-info event-processing-batch-context
-        "Completed processing of event batch."))))
+      (log/log-debug event-processing-batch-context "Completed processing of event batch."))))
 
 (defn- process-events-forever
   [{:keys [configuration kafka-consumer-group rewind-check event-processor]
@@ -69,10 +70,9 @@
                 {:event-processor  event-processor
                  :assignments      (kafka-consumer/assignments consumer)
                  :topic-partitions topic-partitions}]
-            (log/log-info assignment-context
-              "Partitions assigned.")
+            (log/log-debug assignment-context "Partitions assigned.")
             (when (and (some? rewind-check) (rewind-required? rewind-check processor))
-              (log/log-info assignment-context
+              (log/log-debug assignment-context
                 "Rewind required. Seeking to beginning of topic partitions.")
               (kafka-consumer/seek-to-beginning consumer topic-partitions))))
         kafka-consumer-group

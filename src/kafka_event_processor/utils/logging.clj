@@ -15,8 +15,12 @@
       context)))
 
 (defmacro log-debug
-  [context formatted-string]
-  `(log/log :debug ~context nil ~formatted-string))
+  ([context formatted-string]
+   `(log/log :debug ~context (:exception ~context) ~formatted-string))
+  ([context formatted-string exception]
+   `(log-debug
+      (get-error-context ~context ~exception)
+      ~formatted-string)))
 
 (defmacro log-info [context formatted-string]
   `(log/log :info ~context nil ~formatted-string))

@@ -78,7 +78,9 @@
     (swap! atom conj {:processor event-processor
                       :topic     topic
                       :partition partition
-                      :event-id  (event-resource->id payload)})))
+                      :event-id  (event-resource->id payload)}))
+  (on-exception [this processor event event-context exception]
+    (throw exception)))
 
 (defn new-system
   ([] (new-system {}))
@@ -97,7 +99,7 @@
          {:configuration
           :database-configuration})
        :event-handler
-       (AtomEventHandler. (atom []))
+       (or (:event-handler configuration-overrides) (AtomEventHandler. (atom [])))
        :atom
        (atom []))
      (kafka-system/new-system

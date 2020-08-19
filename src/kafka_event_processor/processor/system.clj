@@ -70,6 +70,8 @@
                         :topic     topic
                         :partition partition
                         :event-id  (event-resource->id payload)})))
+    (on-exception [this processor event event-context exception]
+      (throw exception))
   ````"
   [configuration-overrides
    {:keys [kafka database processor-identifier configuration-prefix additional-dependencies
