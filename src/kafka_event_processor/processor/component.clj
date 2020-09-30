@@ -5,7 +5,7 @@
             [clojure.java.jdbc :as jdbc]
             [kafka-event-processor.utils.generators :as generate]
             [kafka-event-processor.processor.protocols
-             :refer [processable? on-event on-complete rewind-required?]]))
+             :refer [processable? on-event on-complete rewind-required? get-unprocessed-events handle-event]]))
 
 (defn- milliseconds [millis] millis)
 
@@ -14,7 +14,7 @@
      ~@body
      (Thread/sleep ~millis)))
 
-(defn- process-events-once
+(defn- store-events-once
   [{:keys [configuration kafka-consumer database event-processor event-handler]
     :as   processor}]
   (log/log-debug
@@ -44,7 +44,6 @@
                   (log/log-info event-context
                     "Continuing processing of event: not yet processed.")
                   (on-event event-handler processor event event-context)
-                  (on-complete event-handler processor event event-context)
                   (log/log-info event-context "Completed processing of event."))
                 (log/log-warn event-context
                   "Skipping processing of event: already processed."))))
@@ -57,7 +56,66 @@
             (throw exception))))
       (kafka-consumer/commit-offset kafka-consumer)
       (log/log-info event-processing-batch-context
-        "Completed processing of event batch."))))
+        "Completed storing of event batch."))))
+
+
+
+(defn- store-events-forever
+  [{:keys [configuration kafka-consumer-group rewind-check event-processor]
+    :as   processor}]
+  (let [{:keys [interval]} configuration
+        on-partitions-assigned
+        (fn [consumer topic-partitions]
+          (let [assignment-context
+                {:event-processor  event-processor
+                 :assignments      (kafka-consumer/assignments consumer)
+                 :topic-partitions topic-partitions}]
+            (log/log-info assignment-context
+              "Partitions assigned.")
+            (when (and (some? rewind-check) (rewind-required? rewind-check processor))
+              (log/log-info assignment-context
+                "Rewind required. Seeking to beginning of topic partitions.")
+              (kafka-consumer/seek-to-beginning consumer topic-partitions))))
+        kafka-consumer-group
+        (assoc kafka-consumer-group
+          :callbacks {:on-partitions-assigned on-partitions-assigned})
+        processor-as-map (into {} [processor])]
+    (kafka-consumer/with-consumer [kafka-consumer kafka-consumer-group]
+      (log/log-info
+        {:event-processor event-processor
+         :configuration   configuration}
+        "Initialising event processor.")
+      (every
+        (milliseconds interval)
+        (try
+          (store-events-once (assoc processor-as-map :kafka-consumer kafka-consumer))
+          (catch Throwable exception
+            (log/log-error
+              {:event-processor event-processor}
+              "Something went wrong in event storage."
+              exception)))))))
+
+(defn- process-events-once
+  [{:keys [configuration kafka-consumer database event-processor event-handler]
+    :as   processor}]
+  (log/log-debug
+    {:event-processor event-processor}
+    "Checking for un-processed event batch.")
+  (let [events-per (get-unprocessed-events event-handler processor)]
+    (doseq [events (vals events-per)]
+      (doseq [event events
+              :let [event-context
+                    {:event-processor event-processor}]]
+        (try
+          (handle-event event-handler processor event event-context)
+          (on-complete event-handler processor event event-context)
+          (catch Throwable exception
+            (log/log-error
+              {:event-processor event-processor}
+              "Something went wrong in event processor."
+              exception)))))))
+
+
 
 (defn- process-events-forever
   [{:keys [configuration kafka-consumer-group rewind-check event-processor]
@@ -100,13 +158,17 @@
   (start [component]
     (log/log-info {:event-processor event-processor}
       "Starting event processor.")
-    (let [processor (future (process-events-forever component))]
-      (assoc component :processor processor)))
+    (let [event-store (future (store-events-forever component))
+          processor (future (process-events-forever component))]
+      (assoc component :processor processor
+                       :event-store event-store)))
 
   (stop [component]
     (when-let [processor (:processor component)]
       (future-cancel processor))
-    (dissoc component :processor)))
+    (when-let [event-store (:event-store component)]
+      (future-cancel event-store))
+    (dissoc component :processor :event-store)))
 
 (defn ^:no-doc new-processor
   [event-processor]
