@@ -5,7 +5,8 @@
     [kafka-event-processor.utils.logging :as log]
     [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
     [kafka-event-processor.processor.configuration :as processor-configuration]
-    [kafka-event-processor.processor.component :refer [new-processor]]))
+    [kafka-event-processor.processor.component :refer [new-processor]]
+    [kafka-event-processor.processor.two-stage-event-processor :as two-stage]))
 
 (defn- ->keyword
   [parts]
@@ -74,7 +75,7 @@
   [configuration-overrides
    {:keys [kafka database processor-identifier configuration-prefix additional-dependencies
            processing-enabled kafka-consumer-group-configuration kafka-consumer-group
-           processor-configuration processor rewind-check event-handler]
+           processor-configuration processor rewind-check event-handler two-stage-processing]
     :or   {kafka                   :kafka
            database                :database
            processor-identifier    :main
@@ -124,7 +125,9 @@
 
         processor
         (component/using
-          (new-processor processor-identifier)
+          (if two-stage-processing
+            (two-stage/new-processor processor-identifier)
+            (new-processor processor-identifier))
           (merge
             {:kafka                kafka
              :configuration        processor-configuration
