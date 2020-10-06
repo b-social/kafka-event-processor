@@ -12,3 +12,10 @@
   (processable? [this processor event event-context] "A callback to decide if an event should be processed")
   (on-event [this processor event event-context] "A callback for processing an event")
   (on-complete [this processor event event-context] "A callback for when an event has finished processing"))
+
+
+(defprotocol TwoStageEventHandler
+  "A handler that is called when at certain points in an events lifecycle. The passed processor contains all the configured dependencies."
+  :extend-via-metadata true
+  (handle-event [this processor event event-context] "A callback for processing an event")
+  (get-unprocessed-events [this processor] "A callback to get all un-processed events"))
