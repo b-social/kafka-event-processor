@@ -5,9 +5,8 @@
             [clojure.java.jdbc :as jdbc]
             [kafka-event-processor.utils.generators :as generate]
             [kafka-event-processor.processor.protocols
-             :refer [rewind-required?]]
-            [kafka-event-processor.processor.protocols
-             :refer [processable? on-event on-complete get-unprocessed-events handle-event]]))
+             :refer [rewind-required? processable? on-event on-complete
+                     get-unprocessed-events handle-event]]))
 
 (defn- milliseconds [millis] millis)
 
