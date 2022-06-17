@@ -26,7 +26,8 @@
   ([config topics]
    (new-consumer config topics {}))
   ([config ^Collection topics callbacks]
-   (let [props (map->properties config)
+   (let [_ (log/log-trace {} "new-consumer")
+         props (map->properties config)
          consumer (KafkaConsumer. props)
          kafka-consumer {:handle consumer :topics topics}]
      (.subscribe consumer topics
@@ -45,7 +46,8 @@
         "Error while stopping kafka consumer."))))
 
 (defmacro with-consumer [binding-details & body]
-  `(let [consumer-group# ~(second binding-details)
+  `(let [_# (log/log-trace {} "with-consumer")
+         consumer-group# ~(second binding-details)
          consumer-config# (kafka-consumer-group/consumer-config-for consumer-group#)
          topics# (get-in consumer-group# [:configuration :topics])
          callbacks# (or (:callbacks consumer-group#) {})
@@ -59,11 +61,13 @@
 
 (defn- extract-event-resource
   [^ConsumerRecord record event-handler]
+  (log/log-trace {} "extract-event-resource")
   (extract-payload event-handler (.value record)))
 
 (defn- extract-events-for-topic
   [^ConsumerRecords consumer-records event-handler ^String topic]
-  (let [records (->
+  (let [_ (log/log-trace {} "extract-events-for-topic")
+        records (->
                   (.records consumer-records topic)
                   (.iterator)
                   (iterator-seq))]
@@ -78,7 +82,8 @@
 (defn get-new-events
   "Reads events from kafka."
   [{:keys [^KafkaConsumer handle topics]} timeout event-handler]
-  (let [records (.poll handle (Duration/ofMillis timeout))
+  (let [_ (log/log-trace {} "get-new-events")
+        records (.poll handle (Duration/ofMillis timeout))
         events
         (mapcat
           (partial extract-events-for-topic records event-handler)
@@ -88,13 +93,15 @@
 (defn assignments
   "Gets assignment from a KafkaConsumer"
   [kafka-consumer]
-  (let [^KafkaConsumer handle (:handle kafka-consumer)]
+  (let [_ (log/log-trace {} "assignments")
+        ^KafkaConsumer handle (:handle kafka-consumer)]
     (.assignment handle)))
 
 (defn seek-to-offset
   "Seek to the offset of a specific event in a Kafka topic"
   [kafka-consumer event]
-  (let [^KafkaConsumer handle (:handle kafka-consumer)
+  (let [_ (log/log-trace {} "seek-to-offset")
+        ^KafkaConsumer handle (:handle kafka-consumer)
         partition (TopicPartition. (:topic event) (:partition event))
         ^long offset (:offset event)]
     (.seek handle partition offset)))
@@ -102,11 +109,13 @@
 (defn seek-to-beginning
   "Seek to the beginning of a Kafka topic"
   [kafka-consumer topic-partitions]
-  (let [^KafkaConsumer handle (:handle kafka-consumer)]
+  (let [_ (log/log-trace {} "seek-to-beginning")
+        ^KafkaConsumer handle (:handle kafka-consumer)]
     (.seekToBeginning handle topic-partitions)
     (run! #(.position handle %) topic-partitions)))
 
 (defn commit-offset
   "Commit the offset to a KafkaConsumer"
   [{:keys [^KafkaConsumer handle]}]
+  (log/log-trace {} "commit-offset")
   (.commitSync handle))
