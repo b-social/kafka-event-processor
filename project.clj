@@ -28,7 +28,7 @@
   :profiles {:test {:dependencies
                       [[eftest "0.5.9"]
                        [freeport "1.0.0"]
-                       [com.opentable.components/otj-pg-embedded "0.13.3"]
+                       [com.opentable.components/otj-pg-embedded "1.0.0"]
                        [org.apache.kafka/kafka_2.12 "2.3.0"
                         :exclusions [org.apache.zookeeper/zookeeper
                                      org.slf4j/slf4j-log4j12]]

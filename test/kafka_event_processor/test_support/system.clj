@@ -2,16 +2,9 @@
   (:require
     [com.stuartsierra.component :as component]
     [kafka-event-processor.test-support.database :as db]
-    [configurati.core :as conf]
     [kafka-event-processor.kafka.system :as kafka-system]
     [kafka-event-processor.processor.system :as processors]
     [vent.core :as vent]
-    [configurati.core
-     :refer [define-configuration
-             with-source
-             with-specification
-             map-source]]
-    [configurati.key-fns :refer [remove-prefix]]
     [kafka-event-processor.test-support.kafka.combined :as kafka]
     [freeport.core :refer [get-free-port!]]
     [vent.hal :as vent-hal]
@@ -85,17 +78,14 @@
   ([configuration-overrides]
    (merge
      (component/system-map
-       :database-configuration
-       (conf/resolve
-         (:database
-           configuration-overrides
-           (db/database-configuration
-             (select-keys configuration-overrides [:database-port]))))
+       :embedded-postgres (:embedded-postgres configuration-overrides)
+
        :database
        (component/using
          (db/new-database)
-         {:configuration
-          :database-configuration})
+         {:db
+          :embedded-postgres})
+
        :event-handler
        (AtomEventHandler. (atom []))
        :atom
