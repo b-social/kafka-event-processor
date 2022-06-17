@@ -6,15 +6,13 @@
   ([] (new-database
         (get-free-port!)))
   ([port]
-   (let [pgb (atom (-> (EmbeddedPostgres/builder)
-                     (.setPort port)))]
-     {:database-port port
-      :db            pgb})))
+   (let [pgb (atom (EmbeddedPostgres/builder))
+         ^EmbeddedPostgres pg (.start ^EmbeddedPostgres$Builder @pgb)]
+     {:embedded-postgres   pg})))
 
-(defn with-database [{:keys [db]}]
+(defn with-database [{:keys [embedded-postgres]}]
   (fn [run-tests]
-    (let [^EmbeddedPostgres pg (.start ^EmbeddedPostgres$Builder @db)]
-      (try
-        (run-tests)
-        (finally
-          (.close pg))))))
+    (try
+      (run-tests)
+      (finally
+        (.close embedded-postgres)))))
