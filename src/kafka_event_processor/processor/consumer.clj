@@ -30,9 +30,17 @@
          props (map->properties config)
          consumer (KafkaConsumer. props)
          kafka-consumer {:handle consumer :topics topics}]
-     (.subscribe consumer topics
-       ^ConsumerRebalanceListener
-       (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
+     (try
+       (.subscribe consumer topics
+         ^ConsumerRebalanceListener
+         (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
+       (catch Throwable exception
+         (log/log-error
+           {:topics         topics
+            :props          props
+            :kafka-consumer kafka-consumer}
+           "Error subscribing to kafka" exception)
+         (throw exception)))
      kafka-consumer)))
 
 (defn ^:no-doc stop-consumer [consumer]
