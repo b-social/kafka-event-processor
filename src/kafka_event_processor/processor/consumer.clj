@@ -55,7 +55,15 @@
 
          ~(first binding-details) consumer#]
      (try
+       (log/log-trace {} "starting with-consumer body")
        ~@body
+       (log/log-trace {} "finished with-consumer body")
+       (catch Throwable exception#
+         (log/log-error
+           {}
+           "Something went wrong in with-consumer."
+           exception#)
+         )
        (finally
          (stop-consumer consumer#)))))
 
