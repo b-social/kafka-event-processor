@@ -100,7 +100,14 @@
   (start [component]
     (log/log-info {:event-processor event-processor}
       "Starting event processor.")
-    (let [processor (future (process-events-forever component))]
+    (let [processor (future
+                      (try
+                        (process-events-forever component)
+                        (catch Throwable exception
+                          (log/log-error {}
+                            "Error while processing events from kafka"
+                            exception)
+                          (throw exception))))]
       (assoc component :processor processor)))
 
   (stop [component]
