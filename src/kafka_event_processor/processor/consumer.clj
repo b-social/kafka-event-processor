@@ -26,22 +26,23 @@
   ([config topics]
    (new-consumer config topics {}))
   ([config ^Collection topics callbacks]
-   (let [_ (log/log-trace {} "new-consumer")
-         props (map->properties config)
-         consumer (KafkaConsumer. props)
-         kafka-consumer {:handle consumer :topics topics}]
-     (try
-       (.subscribe consumer topics
-         ^ConsumerRebalanceListener
-         (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
-       (catch Throwable exception
-         (log/log-error
-           {:topics         topics
-            :props          props
-            :kafka-consumer kafka-consumer}
-           "Error subscribing to kafka" exception)
-         (throw exception)))
-     kafka-consumer)))
+   (let [_ (log/log-trace
+             {:topics topics
+              :config config}
+             "new-consumer")
+         props (map->properties config)]
+    (try
+      (let [consumer (KafkaConsumer. props)
+            kafka-consumer {:handle consumer :topics topics}]
+        (.subscribe consumer topics
+          ^ConsumerRebalanceListener
+          (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
+        kafka-consumer)
+      (catch Throwable exception
+        (throw (ex-info "Error subscribing to kafka"
+                 {:topics topics
+                  :props  props}
+                 exception)))))))
 
 (defn ^:no-doc stop-consumer [consumer]
   (try
