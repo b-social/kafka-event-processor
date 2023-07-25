@@ -5,7 +5,8 @@
             [clojure.java.jdbc :as jdbc]
             [kafka-event-processor.utils.generators :as generate]
             [kafka-event-processor.processor.protocols
-             :refer [processable? on-event on-complete rewind-required?]]))
+             :refer [processable? on-event on-complete rewind-required?]])
+  (:import (io.opentracing.util GlobalTracer)))
 
 (defn- milliseconds [millis] millis)
 
@@ -36,18 +37,28 @@
                      :event-processing-batch-id event-processing-batch-id}]]
         (try
           (log/log-info event-context "Starting processing of event.")
-          (jdbc/with-db-transaction [transaction (:handle database)]
-            (let [database (assoc database :handle transaction)
-                  processor (assoc processor :database database)]
-              (if (processable? event-handler processor event event-context)
-                (do
-                  (log/log-info event-context
-                    "Continuing processing of event: not yet processed.")
-                  (on-event event-handler processor event event-context)
-                  (on-complete event-handler processor event event-context)
-                  (log/log-info event-context "Completed processing of event."))
-                (log/log-warn event-context
-                  "Skipping processing of event: already processed."))))
+          (let [tracer (GlobalTracer/get)
+                span (-> tracer
+                       (.buildSpan "kafka-event-processor.handle-event")
+                       (.start))
+                scope (.activateSpan tracer span)]
+            (try
+              (jdbc/with-db-transaction
+                [transaction (:handle database)]
+                (let [database (assoc database :handle transaction)
+                      processor (assoc processor :database database)]
+                  (if (processable? event-handler processor event event-context)
+                    (do
+                      (log/log-info event-context
+                        "Continuing processing of event: not yet processed.")
+                      (on-event event-handler processor event event-context)
+                      (on-complete event-handler processor event event-context)
+                      (log/log-info event-context "Completed processing of event."))
+                    (log/log-warn event-context
+                      "Skipping processing of event: already processed."))))
+              (finally
+                (.finish span)
+                (.close scope))))
           (catch Throwable exception
             (log/log-error
               event-context
@@ -95,7 +106,7 @@
               exception)))))))
 
 (defrecord Processor
-  [event-processor]
+           [event-processor]
   component/Lifecycle
   (start [component]
     (log/log-info {:event-processor event-processor}
