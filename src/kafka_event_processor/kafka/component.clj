@@ -14,9 +14,7 @@
              env-source]]
 
     [configurati.key-fns :refer [remove-prefix]]
-    [configurati.conversions :refer [convert-to]]
-
-    [kafka-event-processor.utils.properties :refer [map->properties]])
+    [configurati.conversions :refer [convert-to]])
   (:import
     [org.apache.kafka.clients.consumer ConsumerConfig]))
 
