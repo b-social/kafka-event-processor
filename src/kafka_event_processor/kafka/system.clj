@@ -33,7 +33,7 @@
   [config]
   (me/humanize (m/explain kafka-configuration-schema config)))
 
-(comment
+#_(comment
   ;; this map is what the result of calling:
   (conf/resolve
     (:kafka configuration-overrides
@@ -102,4 +102,4 @@
          kafka
          (component/using
            (kafka/new-kafka)
-           {:configuration kafka-configuration-value}))))))
+           {:configuration kafka-configuration}))))))

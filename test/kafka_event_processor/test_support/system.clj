@@ -102,11 +102,21 @@
         :additional-dependencies {:atom :atom}}))))
 
 
-(defn new-test-system [configuration]
+(defn new-test-system
+  [configuration]
   (new-system
     (merge
       {:kafka                     (kafka/kafka-configuration configuration)
        :kafka-main-consumer-group kafka/kafka-main-consumer-group-configuration
+       :main-processor            kafka/main-processor-configuration
+       :main-processing-enabled?  true}
+      configuration)))
+
+(defn new-test-system-v2
+  [configuration]
+  (new-system
+    (merge
+      {:kafka-main-consumer-group kafka/kafka-main-consumer-group-configuration
        :main-processor            kafka/main-processor-configuration
        :main-processing-enabled?  true}
       configuration)))
