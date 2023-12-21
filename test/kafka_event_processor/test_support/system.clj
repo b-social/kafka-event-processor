@@ -2,7 +2,7 @@
   (:require
     [com.stuartsierra.component :as component]
     [kafka-event-processor.test-support.database :as db]
-    [kafka-event-processor.kafka.system :as kafka-system]
+    [kafka-event-processor.kafka.component :as kafka-component]
     [kafka-event-processor.processor.system :as processors]
     [vent.core :as vent]
     [kafka-event-processor.test-support.kafka.combined :as kafka]
@@ -86,13 +86,9 @@
          {:db
           :embedded-postgres})
 
-       :event-handler
-       (AtomEventHandler. (atom []))
-       :atom
-       (atom []))
-     (kafka-system/new-system
-       configuration-overrides
-       {:kafka :kafka})
+       :event-handler (AtomEventHandler. (atom []))
+       :atom (atom [])
+       :kafka (kafka-component/new-kafka (:kafka configuration-overrides)))
      (processors/new-system
        configuration-overrides
        {:processor-identifier    :main
@@ -101,22 +97,12 @@
         :event-handler           :event-handler
         :additional-dependencies {:atom :atom}}))))
 
-
 (defn new-test-system
   [configuration]
   (new-system
     (merge
       {:kafka                     (kafka/kafka-configuration configuration)
        :kafka-main-consumer-group kafka/kafka-main-consumer-group-configuration
-       :main-processor            kafka/main-processor-configuration
-       :main-processing-enabled?  true}
-      configuration)))
-
-(defn new-test-system-v2
-  [configuration]
-  (new-system
-    (merge
-      {:kafka-main-consumer-group kafka/kafka-main-consumer-group-configuration
        :main-processor            kafka/main-processor-configuration
        :main-processing-enabled?  true}
       configuration)))

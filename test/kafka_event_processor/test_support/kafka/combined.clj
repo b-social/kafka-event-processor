@@ -4,11 +4,7 @@
      :refer [define-configuration
              with-specification
              with-source
-             with-key-fn
-             yaml-file-source
-             map-source
-             env-source]]
-    [configurati.key-fns :refer [remove-prefix]]
+             map-source]]
 
     [freeport.core :refer [get-free-port!]]
 
@@ -16,8 +12,6 @@
      :as zk]
     [kafka-event-processor.test-support.kafka.broker
      :as broker]
-    [kafka-event-processor.kafka.component
-     :as kafka]
     [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
     [kafka-event-processor.utils.generators :as generators]
     [kafka-event-processor.processor.configuration :as config]))
@@ -55,14 +49,11 @@
       (finally
         (stop kafka)))))
 
-(defn kafka-configuration [{:keys [broker-host broker-port]}]
-  (define-configuration
-    (with-specification kafka/kafka-configuration-specification)
-    (with-source
-      (map-source
-        {:kafka-bootstrap-servers        (str broker-host ":" broker-port)
-         :kafka-auto-offset-reset-config "earliest"
-         :kafka-security-protocol        "PLAINTEXT"}))))
+(defn kafka-configuration
+  [{:keys [broker-host broker-port]}]
+  {:bootstrap.servers (str broker-host ":" broker-port)
+   :auto.offset.reset "earliest"
+   :security.protocol "PLAINTEXT"})
 
 (def kafka-main-consumer-group-configuration
   (define-configuration
