@@ -1,9 +1,7 @@
 (ns ^:no-doc kafka-event-processor.kafka.consumer-group
   (:require
     [clojure.string :as str]
-
     [com.stuartsierra.component :as component]
-
     [configurati.core
      :refer [define-configuration
              define-configuration-specification
@@ -12,11 +10,8 @@
              with-specification
              with-key-fn
              env-source]]
-
     [configurati.key-fns :refer [remove-prefix]]
-    [configurati.conversions :refer [convert-to]]
-
-    [kafka-event-processor.utils.properties :refer [map->properties]])
+    [configurati.conversions :refer [convert-to]])
   (:import [org.apache.kafka.clients.consumer ConsumerConfig]))
 
 (defmethod convert-to :comma-separated-list [_ value]

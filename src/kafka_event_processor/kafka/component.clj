@@ -1,102 +1,63 @@
-(ns ^:no-doc kafka-event-processor.kafka.component
-  (:require
-    [clojure.string :as str]
+(ns kafka-event-processor.kafka.component
+  (:require [com.stuartsierra.component :as component]
+            [malli.core :as m]
+            [malli.error :as me]
+            [malli.util :as mu]))
 
-    [com.stuartsierra.component :as component]
+(def kafka-base-configuration-schema
+  (m/schema
+    [:map
+     [:bootstrap.servers :string]
+     [:auto.offset.reset [:enum "earliest" "latest" "none"]]
+     [:key.deserializer {:optional true} :string]
+     [:value.deserializer {:optional true} :string]
+     [:enable.auto.commit {:optional true} [:enum "false" "true"]]]))
 
-    [configurati.core
-     :refer [define-configuration
-             define-configuration-specification
-             with-parameter
-             with-source
-             with-specification
-             with-key-fn
-             env-source]]
+(def kafka-configuration-schema
+  (m/schema
+    [:multi {:dispatch :security.protocol}
+     ["SSL"
+      (mu/merge
+        kafka-base-configuration-schema
+        [:map
+         [:security.protocol [:enum "SSL"]]
+         [:ssl.keystore.location :string]
+         [:ssl.keystore.password :string]
+         [:ssl.key.password :string]
+         [:ssl.truststore.location :string]
+         [:ssl.truststore.password :string]])]
+     ["PLAINTEXT"
+      (mu/merge
+        kafka-base-configuration-schema
+        [:map [:security.protocol [:enum "PLAINTEXT"]]])]]))
 
-    [configurati.key-fns :refer [remove-prefix]]
-    [configurati.conversions :refer [convert-to]]
+(def valid-configuration?
+  (m/validator kafka-configuration-schema))
 
-    [kafka-event-processor.utils.properties :refer [map->properties]])
-  (:import
-    [org.apache.kafka.clients.consumer ConsumerConfig]))
-
-(defmethod convert-to :comma-separated-list [_ value]
-  (cond
-    (vector? value) value
-    (some? value) (mapv str/trim (str/split value #","))
-    :else nil))
-
-(def kafka-configuration-specification
-  (define-configuration-specification
-    (with-key-fn (remove-prefix :kafka))
-    (with-parameter :kafka-bootstrap-servers)
-    (with-parameter :kafka-key-deserializer-class-config
-      :default "org.apache.kafka.common.serialization.StringDeserializer")
-    (with-parameter :kafka-value-deserializer-class-config
-      :default "org.apache.kafka.common.serialization.StringDeserializer")
-    (with-parameter :kafka-auto-offset-reset-config
-      :default "earliest")
-    (with-parameter :kafka-enable-auto-commit-config
-      :default "false")
-    (with-parameter :kafka-security-protocol
-      :default "SSL")
-    (with-parameter :kafka-ssl-truststore-location
-      :default "")
-    (with-parameter :kafka-ssl-truststore-password
-      :default "")
-    (with-parameter :kafka-ssl-keystore-location
-      :default "")
-    (with-parameter :kafka-ssl-keystore-password
-      :default "")
-    (with-parameter :kafka-ssl-key-password
-      :default "")))
-
-(defn kafka-configuration
-  [prefix]
-  (define-configuration
-    (with-source (env-source :prefix prefix))
-    (with-specification kafka-configuration-specification)))
+(defn- configuration-errors
+  [configuration]
+  (->> configuration
+       (m/explain kafka-configuration-schema)
+       (me/humanize)))
 
 (defrecord Kafka
   [configuration]
   component/Lifecycle
 
   (start [component]
-    (let [{:keys [bootstrap-servers
-                  key-deserializer-class-config
-                  value-deserializer-class-config
-                  auto-offset-reset-config
-                  enable-auto-commit-config
-                  security-protocol
-                  ssl-truststore-location
-                  ssl-truststore-password
-                  ssl-keystore-location
-                  ssl-keystore-password
-                  ssl-key-password]} configuration
-
-          consumer-config
-          {ConsumerConfig/BOOTSTRAP_SERVERS_CONFIG
-                                    bootstrap-servers
-           ConsumerConfig/KEY_DESERIALIZER_CLASS_CONFIG
-                                    key-deserializer-class-config
-           ConsumerConfig/VALUE_DESERIALIZER_CLASS_CONFIG
-                                    value-deserializer-class-config
-           ConsumerConfig/AUTO_OFFSET_RESET_CONFIG
-                                    auto-offset-reset-config
-           ConsumerConfig/ENABLE_AUTO_COMMIT_CONFIG
-                                    enable-auto-commit-config
-           :security.protocol       security-protocol
-           :ssl.truststore.location ssl-truststore-location
-           :ssl.truststore.password ssl-truststore-password
-           :ssl.keystore.location   ssl-keystore-location
-           :ssl.keystore.password   ssl-keystore-password
-           :ssl.key.password        ssl-key-password}]
-
-      (assoc component
-        :consumer-config consumer-config)))
+    (when-not (valid-configuration? configuration)
+      (throw (ex-info "Input config is not valid against the schema"
+                      {:errors (configuration-errors configuration)})))
+    (assoc component
+           :consumer-config
+           (merge
+             {:key.deserializer "org.apache.kafka.common.serialization.StringDeserializer"
+              :value.deserializer "org.apache.kafka.common.serialization.StringDeserializer"
+              :enable.auto.commit "false"}
+             configuration)))
 
   (stop [component]
     (dissoc component :consumer-config)))
-
-(defn new-kafka []
-  (map->Kafka {}))
+(defn new-kafka
+  [configuration]
+  (map->Kafka {:configuration configuration}))

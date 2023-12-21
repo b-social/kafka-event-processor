@@ -10,6 +10,7 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [com.stuartsierra/component "1.0.0"]
                  [io.logicblocks/configurati "0.5.2"]
+                 [metosin/malli "0.12.0"]
                  [org.apache.kafka/kafka-clients "2.3.0"]
                  [cambium/cambium.core "0.9.3"]
                  [cambium/cambium.codec-cheshire "0.9.3"]
