@@ -85,21 +85,20 @@
             kafka-configuration  :kafka-configuration
             kafka-enabled        :kafka-enabled?
             configuration-prefix :service}}]
-   (let [kafka-enabled? (get configuration-overrides kafka-enabled true)
-         kafka-configuration-value (or (:kafka-configuration configuration-overrides)
-                                 (conf/resolve
-                                   (:kafka configuration-overrides
-                                     (kafka/kafka-configuration configuration-prefix))))]
-     (println "HERE!" kafka-configuration-value)
-     (when-not (valid-kafka-configuration? kafka-configuration-value)
-       (throw (ex-info "Input config is not valid against the schema"
-                       {:errors (config-errors kafka-configuration-value)})))
+   (let [kafka-enabled? (get configuration-overrides kafka-enabled true)]
      (log/log-info {kafka-enabled kafka-enabled?} "Kafka enabled?")
      (when kafka-enabled?
-       (component/system-map
-         kafka-configuration kafka-configuration-value
+       (let [kafka-configuration-value (or (:kafka-configuration configuration-overrides)
+                                           (conf/resolve
+                                             (:kafka configuration-overrides
+                                               (kafka/kafka-configuration configuration-prefix))))]
+         (when-not (valid-kafka-configuration? kafka-configuration-value)
+           (throw (ex-info "Input config is not valid against the schema"
+                           {:errors (config-errors kafka-configuration-value)})))
+         (component/system-map
+           kafka-configuration kafka-configuration-value
 
-         kafka
-         (component/using
-           (kafka/new-kafka)
-           {:configuration kafka-configuration}))))))
+           kafka
+           (component/using
+             (kafka/new-kafka)
+             {:configuration kafka-configuration})))))))
