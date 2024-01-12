@@ -1,14 +1,14 @@
 (ns ^:no-doc kafka-event-processor.processor.configuration
   (:require
-    [configurati.core
-     :refer [define-configuration
-             define-configuration-specification
-             with-parameter
-             with-source
-             with-specification
-             with-key-fn
-             env-source]]
-    [configurati.key-fns :refer [remove-prefix]]))
+   [configurati.core
+    :refer [define-configuration
+            define-configuration-specification
+            with-parameter
+            with-source
+            with-specification
+            with-key-fn
+            env-source]]
+   [configurati.key-fns :refer [remove-prefix]]))
 
 (defn processor-configuration-specification [processor-type]
   (let [prefix (str (name processor-type) "-processor")]
@@ -28,4 +28,3 @@
     (with-source (env-source :prefix configuration-prefix))
     (with-specification
       (processor-configuration-specification processor-type))))
-

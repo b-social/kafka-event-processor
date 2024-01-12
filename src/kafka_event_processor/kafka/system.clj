@@ -1,12 +1,12 @@
 (ns kafka-event-processor.kafka.system
   (:require
-    [com.stuartsierra.component :as component]
+   [com.stuartsierra.component :as component]
 
-    [configurati.core :as conf]
+   [configurati.core :as conf]
 
-    [kafka-event-processor.kafka.component
-     :as kafka]
-    [kafka-event-processor.utils.logging :as log]))
+   [kafka-event-processor.kafka.component
+    :as kafka]
+   [kafka-event-processor.utils.logging :as log]))
 
 (defn new-system
   "Creates a new kafka consumer client.
@@ -19,7 +19,7 @@
    * kafka-configuration: :kafka-configuration
 
    e.g.
-   
+
    ````
    (kafka-system/new-system
           configuration-overrides
@@ -44,7 +44,7 @@
          kafka-configuration
          (conf/resolve
            (:kafka configuration-overrides
-             (kafka/kafka-configuration configuration-prefix)))
+                   (kafka/kafka-configuration configuration-prefix)))
 
          kafka
          (component/using

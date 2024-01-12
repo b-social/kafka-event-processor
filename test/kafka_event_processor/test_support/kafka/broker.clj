@@ -1,10 +1,10 @@
 (ns kafka-event-processor.test-support.kafka.broker
   (:require
-    [kafka-event-processor.utils.properties :as properties])
+   [kafka-event-processor.utils.properties :as properties])
   (:import
-    [java.nio.file Files]
-    [java.nio.file.attribute FileAttribute]
-    [kafka.server KafkaConfig KafkaServerStartable]))
+   [java.nio.file Files]
+   [java.nio.file.attribute FileAttribute]
+   [kafka.server KafkaConfig KafkaServerStartable]))
 
 (defn kafka-config [host port zookeeper]
   (let [port (str port)

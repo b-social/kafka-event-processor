@@ -1,14 +1,14 @@
 (ns kafka-event-processor.test-support.kafka.producer
   (:require
-    [halboy.resource :as hal]
-    [halboy.json :as hal-json]
+   [halboy.resource :as hal]
+   [halboy.json :as hal-json]
 
-    [kafka-event-processor.utils.properties :as properties])
+   [kafka-event-processor.utils.properties :as properties])
   (:import
-    [java.util Properties]
-    [org.apache.kafka.common.serialization StringSerializer]
-    [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]
-    [com.google.common.util.concurrent Futures]))
+   [java.util Properties]
+   [org.apache.kafka.common.serialization StringSerializer]
+   [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]
+   [com.google.common.util.concurrent Futures]))
 
 (defn producer-config [overrides]
   (properties/map->properties

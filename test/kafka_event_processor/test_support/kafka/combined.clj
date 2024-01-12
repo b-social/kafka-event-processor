@@ -1,40 +1,40 @@
 (ns kafka-event-processor.test-support.kafka.combined
   (:require
-    [configurati.core
-     :refer [define-configuration
-             with-specification
-             with-source
-             with-key-fn
-             yaml-file-source
-             map-source
-             env-source]]
-    [configurati.key-fns :refer [remove-prefix]]
+   [configurati.core
+    :refer [define-configuration
+            with-specification
+            with-source
+            with-key-fn
+            yaml-file-source
+            map-source
+            env-source]]
+   [configurati.key-fns :refer [remove-prefix]]
 
-    [freeport.core :refer [get-free-port!]]
+   [freeport.core :refer [get-free-port!]]
 
-    [kafka-event-processor.test-support.kafka.zookeeper
-     :as zk]
-    [kafka-event-processor.test-support.kafka.broker
-     :as broker]
-    [kafka-event-processor.kafka.component
-     :as kafka]
-    [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
-    [kafka-event-processor.utils.generators :as generators]
-    [kafka-event-processor.processor.configuration :as config]))
+   [kafka-event-processor.test-support.kafka.zookeeper
+    :as zk]
+   [kafka-event-processor.test-support.kafka.broker
+    :as broker]
+   [kafka-event-processor.kafka.component
+    :as kafka]
+   [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
+   [kafka-event-processor.utils.generators :as generators]
+   [kafka-event-processor.processor.configuration :as config]))
 
 (defn new-kafka
   ([] (new-kafka
         "localhost"
         (get-free-port!)))
   ([host port]
-    (let [zookeeper (atom (zk/new-zookeeper))
-          broker-config (broker/kafka-config host port
-                          (zk/connect-string @zookeeper))
-          broker (atom (broker/new-kafka-broker broker-config))]
-      {:broker      broker
-       :broker-host host
-       :broker-port port
-       :zookeeper   zookeeper})))
+   (let [zookeeper (atom (zk/new-zookeeper))
+         broker-config (broker/kafka-config host port
+                         (zk/connect-string @zookeeper))
+         broker (atom (broker/new-kafka-broker broker-config))]
+     {:broker      broker
+      :broker-host host
+      :broker-port port
+      :zookeeper   zookeeper})))
 
 (defn start [{:keys [zookeeper broker]}]
   (do

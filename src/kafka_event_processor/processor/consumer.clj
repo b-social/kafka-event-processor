@@ -1,17 +1,17 @@
 (ns kafka-event-processor.processor.consumer
   (:require
-    [kafka-event-processor.utils.logging :as log]
-    [kafka-event-processor.utils.properties :refer [map->properties]]
-    [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
-    [kafka-event-processor.processor.protocols :refer [extract-payload]])
+   [kafka-event-processor.utils.logging :as log]
+   [kafka-event-processor.utils.properties :refer [map->properties]]
+   [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
+   [kafka-event-processor.processor.protocols :refer [extract-payload]])
   (:import
-    [org.apache.kafka.clients.consumer KafkaConsumer
-                                       ConsumerRebalanceListener
-                                       ConsumerRecord
-                                       ConsumerRecords]
-    [org.apache.kafka.common TopicPartition]
-    [java.util Collection]
-    [java.time Duration]))
+   [org.apache.kafka.clients.consumer KafkaConsumer
+    ConsumerRebalanceListener
+    ConsumerRecord
+    ConsumerRecords]
+   [org.apache.kafka.common TopicPartition]
+   [java.util Collection]
+   [java.time Duration]))
 
 (defrecord FnBackedConsumerRebalanceListener [kafka-consumer callbacks]
   ConsumerRebalanceListener
@@ -31,18 +31,18 @@
               :config config}
              "new-consumer")
          props (map->properties config)]
-    (try
-      (let [consumer (KafkaConsumer. props)
-            kafka-consumer {:handle consumer :topics topics}]
-        (.subscribe consumer topics
-          ^ConsumerRebalanceListener
-          (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
-        kafka-consumer)
-      (catch Throwable exception
-        (throw (ex-info "Error subscribing to kafka"
-                 {:topics topics
-                  :props  props}
-                 exception)))))))
+     (try
+       (let [consumer (KafkaConsumer. props)
+             kafka-consumer {:handle consumer :topics topics}]
+         (.subscribe consumer topics
+           ^ConsumerRebalanceListener
+           (->FnBackedConsumerRebalanceListener kafka-consumer callbacks))
+         kafka-consumer)
+       (catch Throwable exception
+         (throw (ex-info "Error subscribing to kafka"
+                  {:topics topics
+                   :props  props}
+                  exception)))))))
 
 (defn ^:no-doc stop-consumer [consumer]
   (try
@@ -71,8 +71,7 @@
          (log/log-error
            {}
            "Something went wrong in with-consumer."
-           exception#)
-         )
+           exception#))
        (finally
          (stop-consumer consumer#)))))
 

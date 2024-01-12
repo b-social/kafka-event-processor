@@ -1,24 +1,24 @@
 (ns ^:no-doc kafka-event-processor.kafka.component
   (:require
-    [clojure.string :as str]
+   [clojure.string :as str]
 
-    [com.stuartsierra.component :as component]
+   [com.stuartsierra.component :as component]
 
-    [configurati.core
-     :refer [define-configuration
-             define-configuration-specification
-             with-parameter
-             with-source
-             with-specification
-             with-key-fn
-             env-source]]
+   [configurati.core
+    :refer [define-configuration
+            define-configuration-specification
+            with-parameter
+            with-source
+            with-specification
+            with-key-fn
+            env-source]]
 
-    [configurati.key-fns :refer [remove-prefix]]
-    [configurati.conversions :refer [convert-to]]
+   [configurati.key-fns :refer [remove-prefix]]
+   [configurati.conversions :refer [convert-to]]
 
-    [kafka-event-processor.utils.properties :refer [map->properties]])
+   [kafka-event-processor.utils.properties :refer [map->properties]])
   (:import
-    [org.apache.kafka.clients.consumer ConsumerConfig]))
+   [org.apache.kafka.clients.consumer ConsumerConfig]))
 
 (defmethod convert-to :comma-separated-list [_ value]
   (cond
@@ -58,7 +58,7 @@
     (with-specification kafka-configuration-specification)))
 
 (defrecord Kafka
-  [configuration]
+           [configuration]
   component/Lifecycle
 
   (start [component]
@@ -76,15 +76,15 @@
 
           consumer-config
           {ConsumerConfig/BOOTSTRAP_SERVERS_CONFIG
-                                    bootstrap-servers
+           bootstrap-servers
            ConsumerConfig/KEY_DESERIALIZER_CLASS_CONFIG
-                                    key-deserializer-class-config
+           key-deserializer-class-config
            ConsumerConfig/VALUE_DESERIALIZER_CLASS_CONFIG
-                                    value-deserializer-class-config
+           value-deserializer-class-config
            ConsumerConfig/AUTO_OFFSET_RESET_CONFIG
-                                    auto-offset-reset-config
+           auto-offset-reset-config
            ConsumerConfig/ENABLE_AUTO_COMMIT_CONFIG
-                                    enable-auto-commit-config
+           enable-auto-commit-config
            :security.protocol       security-protocol
            :ssl.truststore.location ssl-truststore-location
            :ssl.truststore.password ssl-truststore-password

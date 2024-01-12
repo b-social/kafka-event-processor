@@ -1,6 +1,6 @@
 (ns kafka-event-processor.utils.logging
   (:require
-    [cambium.core :as log]))
+   [cambium.core :as log]))
 
 (defn ^:no-doc get-error-context [context ^Throwable exception]
   (let [exception-class-name (.getCanonicalName (class exception))
@@ -32,6 +32,6 @@
   ([context formatted-string]
    `(log/log :error ~context (:exception ~context) ~formatted-string))
   ([context formatted-string exception]
-   `(log-error 
+   `(log-error
       (get-error-context ~context ~exception)
       ~formatted-string)))

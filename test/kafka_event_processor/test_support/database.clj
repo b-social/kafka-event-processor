@@ -1,11 +1,10 @@
 (ns kafka-event-processor.test-support.database
   (:require
-    [com.stuartsierra.component :as component])
+   [com.stuartsierra.component :as component])
   (:import [java.io Closeable]))
 
-
 (defrecord Database
-  [db handle]
+           [db handle]
   component/Lifecycle
 
   (start [component]

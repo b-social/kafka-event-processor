@@ -1,15 +1,15 @@
 (ns kafka-event-processor.processing-test
   (:require
-    [clojure.test :refer :all]
-    [kafka-event-processor.test-support.kafka.combined :as kafka]
-    [kafka-event-processor.test-support.postgres.database :as database]
-    [kafka-event-processor.test-support.system :as system]
-    [kafka-event-processor.test-support.conditional-execution :refer [do-until]]
-    [halboy.resource :as hal]
-    [kafka-event-processor.utils.generators :as generators]
-    [halboy.json :as hal-json]
-    [jason.convenience :refer [->wire-json]]
-    [kafka-event-processor.test-support.kafka.producer :as producer])
+   [clojure.test :refer :all]
+   [kafka-event-processor.test-support.kafka.combined :as kafka]
+   [kafka-event-processor.test-support.postgres.database :as database]
+   [kafka-event-processor.test-support.system :as system]
+   [kafka-event-processor.test-support.conditional-execution :refer [do-until]]
+   [halboy.resource :as hal]
+   [kafka-event-processor.utils.generators :as generators]
+   [halboy.json :as hal-json]
+   [jason.convenience :refer [->wire-json]]
+   [kafka-event-processor.test-support.kafka.producer :as producer])
   (:import [kafka_event_processor.processor.protocols EventHandler]))
 
 (let [database (database/new-database)
@@ -46,9 +46,9 @@
           (is (= message (:message event))))
 
         (let [read-cursors (do-until
-                            (fn [] @(.atom event-handler))
-                            {:matcher #(= 1 (count %))
-                             :timeout 60000})
+                             (fn [] @(.atom event-handler))
+                             {:matcher #(= 1 (count %))
+                              :timeout 60000})
               cursor (first read-cursors)]
           (is (= 1 (count read-cursors)))
           (is (= event-id (:event-id cursor)))

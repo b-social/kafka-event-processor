@@ -1,13 +1,13 @@
 (ns kafka-event-processor.test-support.kafka.zookeeper
   (:require
-    [freeport.core :refer [get-free-port!]])
+   [freeport.core :refer [get-free-port!]])
   (:import
-    [org.apache.curator.test TestingServer]))
+   [org.apache.curator.test TestingServer]))
 
 (defn new-zookeeper
   ([] (new-zookeeper (get-free-port!)))
   ([^Integer port]
-    (TestingServer. port false)))
+   (TestingServer. port false)))
 
 (defn connect-string [zookeeper]
   (.getConnectString zookeeper))

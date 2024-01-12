@@ -1,15 +1,15 @@
 (ns kafka-event-processor.processor.system
   (:require
-    [configurati.core :as conf]
-    [com.stuartsierra.component :as component]
-    [kafka-event-processor.utils.logging :as log]
-    [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
-    [kafka-event-processor.processor.configuration :as processor-configuration]
-    [kafka-event-processor.processor.component :refer [new-processor]]))
+   [configurati.core :as conf]
+   [com.stuartsierra.component :as component]
+   [kafka-event-processor.utils.logging :as log]
+   [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
+   [kafka-event-processor.processor.configuration :as processor-configuration]
+   [kafka-event-processor.processor.component :refer [new-processor]]))
 
 (defn- ->keyword
   [parts]
-  (keyword (apply str parts)))
+  (keyword (clojure.string/join parts)))
 
 (defn new-system
   "Creates a new kafka event processor.
@@ -31,7 +31,7 @@
    * processor: {processor-identifier}-processor
 
    Optionally provide a system map key for rewind-check
-   
+
    Optional provide a map of system keys that are used as additional dependencies to the component
 
    e.g.

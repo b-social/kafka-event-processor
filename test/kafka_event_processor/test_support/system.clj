@@ -1,17 +1,17 @@
 (ns kafka-event-processor.test-support.system
   (:require
-    [com.stuartsierra.component :as component]
-    [kafka-event-processor.test-support.database :as db]
-    [kafka-event-processor.kafka.system :as kafka-system]
-    [kafka-event-processor.processor.system :as processors]
-    [vent.core :as vent]
-    [kafka-event-processor.test-support.kafka.combined :as kafka]
-    [freeport.core :refer [get-free-port!]]
-    [vent.hal :as vent-hal]
-    [halboy.resource :as hal]
-    [halboy.json :as hal-json]
-    [kafka-event-processor.processor.protocols :refer [EventHandler]]
-    [clojure.string :as string]))
+   [com.stuartsierra.component :as component]
+   [kafka-event-processor.test-support.database :as db]
+   [kafka-event-processor.kafka.system :as kafka-system]
+   [kafka-event-processor.processor.system :as processors]
+   [vent.core :as vent]
+   [kafka-event-processor.test-support.kafka.combined :as kafka]
+   [freeport.core :refer [get-free-port!]]
+   [vent.hal :as vent-hal]
+   [halboy.resource :as hal]
+   [halboy.json :as hal-json]
+   [kafka-event-processor.processor.protocols :refer [EventHandler]]
+   [clojure.string :as string]))
 
 (defn with-system-lifecycle [system-atom]
   (fn [f]
@@ -40,7 +40,6 @@
       (vent/gather test-gather)
       (vent/act test-act))))
 
-
 (defn- event-resource->id-from-href
   [event-resource href]
   (let [href (hal/get-href event-resource href)]
@@ -52,7 +51,7 @@
   (event-resource->id-from-href event-resource :self))
 
 (deftype AtomEventHandler
-  [atom]
+         [atom]
   EventHandler
   (extract-payload
     [this event]
@@ -100,7 +99,6 @@
         :database                :database
         :event-handler           :event-handler
         :additional-dependencies {:atom :atom}}))))
-
 
 (defn new-test-system [configuration]
   (new-system
