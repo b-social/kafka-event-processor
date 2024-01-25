@@ -17,7 +17,6 @@
       (finally
         (reset! system-atom (component/stop-system @system-atom))))))
 
-
 (deftype AtomEventHandler
          [atom]
   EventHandler
@@ -51,7 +50,9 @@
           :embedded-postgres})
 
        :event-handler
-       (AtomEventHandler. (atom []))
+       (or (:event-handler configuration-overrides)
+         (AtomEventHandler. (atom [])))
+
        :atom
        (atom []))
      (kafka-system/new-system

@@ -3,7 +3,8 @@
    [kafka-event-processor.utils.logging :as log]
    [kafka-event-processor.utils.properties :refer [map->properties]]
    [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
-   [kafka-event-processor.processor.protocols :refer [extract-payload]])
+   [kafka-event-processor.processor.protocols
+    :refer [extract-payload extract-from-record ExtractPayloadFromRecord]])
   (:import
    [org.apache.kafka.clients.consumer KafkaConsumer
     ConsumerRebalanceListener
@@ -78,7 +79,10 @@
 (defn- extract-event-resource
   [^ConsumerRecord record event-handler]
   (log/log-trace {} "extract-event-resource")
-  (extract-payload event-handler (.value record)))
+
+  (if (satisfies? ExtractPayloadFromRecord event-handler)
+    (extract-from-record event-handler record)
+    (extract-payload event-handler (.value record))))
 
 (defn- extract-events-for-topic
   [^ConsumerRecords consumer-records event-handler ^String topic]
