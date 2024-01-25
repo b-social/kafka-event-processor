@@ -1,7 +1,6 @@
 (ns kafka-event-processor.test-support.kafka.producer
   (:require
-   [halboy.resource :as hal]
-   [halboy.json :as hal-json]
+   [jason.convenience :as json]
 
    [kafka-event-processor.utils.properties :as properties])
   (:import
@@ -21,10 +20,7 @@
       overrides)))
 
 (defn create-message [payload]
-  (-> (hal/new-resource)
-    (hal/add-property :schema nil)
-    (hal/add-property :payload payload)
-    (hal-json/resource->json)))
+  (json/->wire-json payload))
 
 (defn publish-messages
   [{:keys [broker-host broker-port]} topic messages]

@@ -36,9 +36,7 @@
                        [org.apache.curator/curator-test "5.0.0"]
                        [com.impossibl.pgjdbc-ng/pgjdbc-ng "0.8.4"]
                        [hikari-cp "2.12.0"]
-                       [b-social/jason "0.1.5"]
-                       [b-social/vent "0.6.5"]
-                       [halboy "5.1.0"]]
+                       [b-social/jason "0.1.5"]]
                     :eftest {:multithread? false}}}
 
   :cloverage
