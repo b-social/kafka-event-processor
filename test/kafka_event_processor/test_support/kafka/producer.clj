@@ -1,13 +1,13 @@
 (ns kafka-event-processor.test-support.kafka.producer
   (:require
-   [jason.convenience :as json]
 
-   [kafka-event-processor.utils.properties :as properties])
+   [kafka-event-processor.utils.properties :as properties]
+   [jason.convenience :as json])
   (:import
    [java.util Properties]
+   [org.apache.kafka.common.header.internals RecordHeaders]
    [org.apache.kafka.common.serialization StringSerializer]
-   [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]
-   [com.google.common.util.concurrent Futures]))
+   [org.apache.kafka.clients.producer KafkaProducer ProducerRecord]))
 
 (defn producer-config [overrides]
   (properties/map->properties
@@ -19,11 +19,8 @@
        :request.timeout.ms "500"}
       overrides)))
 
-(defn create-message [payload]
-  (json/->wire-json payload))
-
 (defn publish-messages
-  [{:keys [broker-host broker-port]} topic messages]
+  [{:keys [broker-host broker-port]} ^String topic messages]
   (let [key-serializer (StringSerializer.)
         value-serializer (StringSerializer.)
         ^Properties config (producer-config
@@ -31,10 +28,16 @@
                               (str broker-host ":" broker-port)})]
     (with-open [producer (KafkaProducer.
                            config key-serializer value-serializer)]
-      (do
-        (.configure key-serializer config true)
-        (.configure value-serializer config false)
-        (mapv
-          #(Futures/getUnchecked
-             (.send producer (ProducerRecord. (name topic) %)))
-          messages)))))
+      (.configure key-serializer config true)
+      (.configure value-serializer config false)
+      (doseq [{:keys [headers
+                      key
+                      payload]} messages]
+        (let [payload (json/->wire-json payload)
+              ^RecordHeaders headers (reduce
+                                       (fn [acc [k v]]
+                                         (.add acc (name k) (.getBytes v)))
+                                       (RecordHeaders.)
+                                       headers)
+              record (ProducerRecord. topic nil key payload headers)]
+          (.get (.send producer record)))))))
