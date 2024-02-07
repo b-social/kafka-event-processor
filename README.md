@@ -25,7 +25,7 @@ Add the following to your `project.clj` file:
 
 ## Usage
 
-FIXME
+Run test with `lein test`
 
 ## License
 

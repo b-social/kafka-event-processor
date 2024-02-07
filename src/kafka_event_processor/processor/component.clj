@@ -15,6 +15,8 @@
      ~@body
      (Thread/sleep ~millis)))
 
+(def event->topic :topic)
+
 (defn- process-events-once
   [{:keys [configuration kafka-consumer database event-processor event-handler]
     :as   processor}]
@@ -31,41 +33,54 @@
     (when (pos? (count events))
       (log/log-info event-processing-batch-context
         "Starting processing of event batch.")
-      (doseq [event events
-              :let [event-context
-                    {:event-processor           event-processor
-                     :event-processing-batch-id event-processing-batch-id}]]
+      (doseq [[topic events] (group-by event->topic events)]
         (try
-          (log/log-info event-context "Starting processing of event.")
-          (let [tracer (GlobalTracer/get)
-                span (-> tracer
-                       (.buildSpan "kafka-event-processor.handle-event")
-                       (.start))
-                scope (.activateSpan tracer span)]
+          (log/log-info
+            (assoc event-processing-batch-context :topic topic)
+            (format "Processing %d events for topic %s." (count events) topic))
+          (doseq [event events
+                  :let [event-context
+                        {:event-processor           event-processor
+                         :event-processing-batch-id event-processing-batch-id}]]
             (try
-              (jdbc/with-db-transaction
-                [transaction (:handle database)]
-                (let [database (assoc database :handle transaction)
-                      processor (assoc processor :database database)]
-                  (if (processable? event-handler processor event event-context)
-                    (do
-                      (log/log-info event-context
-                        "Continuing processing of event: not yet processed.")
-                      (on-event event-handler processor event event-context)
-                      (on-complete event-handler processor event event-context)
-                      (log/log-info event-context "Completed processing of event."))
-                    (log/log-warn event-context
-                      "Skipping processing of event: already processed."))))
-              (finally
-                (.finish span)
-                (.close scope))))
-          (catch Throwable exception
+              (log/log-info event-context "Starting processing of event.")
+              (let [tracer (GlobalTracer/get)
+                    span (-> tracer
+                           (.buildSpan "kafka-event-processor.handle-event")
+                           (.start))
+                    scope (.activateSpan tracer span)]
+                (try
+                  (jdbc/with-db-transaction
+                    [transaction (:handle database)]
+                    (let [database (assoc database :handle transaction)
+                          processor (assoc processor :database database)]
+                      (if (processable? event-handler processor event event-context)
+                        (do
+                          (log/log-info event-context
+                            "Continuing processing of event: not yet processed.")
+                          (on-event event-handler processor event event-context)
+                          (on-complete event-handler processor event event-context)
+                          (log/log-info event-context "Completed processing of event."))
+                        (log/log-warn event-context
+                          "Skipping processing of event: already processed."))))
+                  (finally
+                    (.finish span)
+                    (.close scope))))
+              (catch Throwable exception
+                (log/log-error
+                  event-context
+                  "Error processing event."
+                  exception)
+                (kafka-consumer/seek-to-offset kafka-consumer event)
+                (throw exception))))
+          (log/log-info
+            (assoc event-processing-batch-context :topic topic)
+            (format "Completed processing %d events for topic %s." (count events) topic))
+          (catch Exception exception
             (log/log-error
-              event-context
-              "Error processing event."
-              exception)
-            (kafka-consumer/seek-to-offset kafka-consumer event)
-            (throw exception))))
+              (merge event-processing-batch-context
+                {:exception-message (.getMessage exception)})
+              "Error processing batch topic." exception))))
       (kafka-consumer/commit-offset kafka-consumer)
       (log/log-info event-processing-batch-context
         "Completed processing of event batch."))))
