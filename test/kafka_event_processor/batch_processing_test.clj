@@ -1,4 +1,4 @@
-(ns kafka-event-processor.processing-test
+(ns kafka-event-processor.batch-processing-test
   (:require
    [clojure.test :refer :all]
    [kafka-event-processor.test-support.kafka.combined :as kafka]
@@ -29,37 +29,26 @@
     (kafka/with-kafka kafka)
     (system/with-system-lifecycle test-system))
 
-  (deftest processing
-    (testing "processes events with event handler only"
+  (deftest processes-other-topic-events-when-one-topic-fails
+    (testing "processes other topic events when one topic fails - last 2 of address-checks are not processed"
       (let [events-atom (:atom @test-system)
             ^EventHandler event-handler (:event-handler @test-system)
-            event-id (generators/uuid)
-            message "I am an event"
-            event {:id event-id
-                   :message message
-                   :type :test}]
+            cases [(test-case :resource-type "liveness-checks")
+                   (test-case :resource-type "address-checks")
+                   (test-case :resource-type "bankruptcy-checks")
+                   (test-case :resource-type "liveness-checks")
+                   (test-case :resource-type "address-checks" :throw-error? true)
+                   (test-case :resource-type "bankruptcy-checks")
+                   (test-case :resource-type "liveness-checks")
+                   (test-case :resource-type "address-checks")
+                   (test-case :resource-type "bankruptcy-checks")]]
 
-        (producer/publish-messages kafka "test"
-          [{:payload event}])
+        (doseq [{:keys [topic brn throw-error?]} cases]
+          (producer/publish-messages kafka topic
+            [{:payload {:brn brn :throw-error? throw-error?}}]))
 
         (let [read-events (do-until
                             (fn [] @events-atom)
-                            {:matcher #(= 1 (count %))
-                             :timeout 60000})
-              event (first read-events)
-              event-properties (:payload event)]
-          (is (= 1 (count read-events)))
-          (is (= event-id (:id event-properties)))
-          (is (= message (:message event-properties)))
-          (is (= (:topic event) "test")))
-
-        (let [read-cursors (do-until
-                             (fn [] @(.atom event-handler))
-                             {:matcher #(= 1 (count %))
-                              :timeout 60000})
-              cursor (first read-cursors)]
-          (is (= 1 (count read-cursors)))
-          (is (= event-id (get-in cursor [:payload :id])))
-          (is (= "test" (:topic cursor)))
-          (is (= :main (:processor cursor)))
-          (is (int? (:partition cursor))))))))
+                            {:matcher #(= 7 (count %))
+                             :timeout 60000})]
+          (is (= 7 (count read-events))))))))

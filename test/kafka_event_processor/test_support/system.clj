@@ -28,7 +28,9 @@
     true)
   (on-event
     [this processor event _]
-    (swap! (:atom processor) conj event))
+    (if (get-in event [:payload :throw-error?] false)
+      (throw (Exception. "Simulated error"))
+      (swap! (:atom processor) conj event)))
   (on-complete
     [this processor {:keys [topic partition payload]} {:keys [event-processor]}]
     (swap! atom conj {:processor event-processor

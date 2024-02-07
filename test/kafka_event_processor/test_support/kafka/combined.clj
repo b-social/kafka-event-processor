@@ -71,7 +71,7 @@
     (with-source
       (map-source
         {:kafka-main-consumer-group-id     (str (generators/uuid))
-         :kafka-main-consumer-group-topics ["test"]}))))
+         :kafka-main-consumer-group-topics ["test", "liveness-checks", "address-checks", "bankruptcy-checks"]}))))
 
 (def main-processor-configuration
   (define-configuration
