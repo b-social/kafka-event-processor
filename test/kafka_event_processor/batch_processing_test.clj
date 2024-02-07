@@ -32,7 +32,6 @@
   (deftest processes-other-topic-events-when-one-topic-fails
     (testing "processes other topic events when one topic fails - last 2 of address-checks are not processed"
       (let [events-atom (:atom @test-system)
-            ^EventHandler event-handler (:event-handler @test-system)
             cases [(test-case :resource-type "liveness-checks")
                    (test-case :resource-type "address-checks")
                    (test-case :resource-type "bankruptcy-checks")
