@@ -4,22 +4,10 @@
    [kafka-event-processor.test-support.kafka.combined :as kafka]
    [kafka-event-processor.test-support.postgres.database :as database]
    [kafka-event-processor.test-support.system :as system]
-   [kafka-event-processor.test-support.data :as data]
    [kafka-event-processor.test-support.conditional-execution :refer [do-until]]
    [kafka-event-processor.utils.generators :as generators]
    [kafka-event-processor.test-support.kafka.producer :as producer])
   (:import [kafka_event_processor.processor.protocols EventHandler]))
-
-(defn test-case [& {:keys [resource-type throw-error?]}]
-  (let [id (data/random-uuid)
-        brn (str "b-social:" resource-type ":" id)
-        href (data/random-url)]
-    {:resource-type resource-type
-     :topic         resource-type
-     :id            id
-     :brn           brn
-     :href          href
-     :throw-error?  throw-error?}))
 
 (let [database (database/new-database)
       kafka (kafka/new-kafka)
