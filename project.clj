@@ -1,4 +1,4 @@
-(defproject b-social/kafka-event-processor "0.1.7"
+(defproject b-social/kafka-event-processor "0.1.8-SNAPSHOT"
 
   :description "A library for processing kafka events as a stuartsierra component and configured with configurati. Opinionated that the event processing will be wrapped in a jdbc transaction."
 
