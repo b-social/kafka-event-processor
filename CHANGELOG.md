@@ -5,8 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-
 ## [Unreleased]
+
+## [0.1.7] — 2024-02-08
 
 ## [0.1.6] — 2024-01-26
 
@@ -23,8 +24,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.1.0] — 2020-06-04
 
 ## 0.1.0-SNAPSHOT — 2020-06-03
-Released without _CHANGELOG.md_.
 
+Released without _CHANGELOG.md_.
 
 [0.1.0]: https://github.com/b-social/kafka-event-processor/compare/0.1.0-SNAPSHOT...0.1.0
 [0.1.1]: https://github.com/b-social/kafka-event-processor/compare/0.1.0...0.1.1
@@ -33,4 +34,5 @@ Released without _CHANGELOG.md_.
 [0.1.4]: https://github.com/b-social/kafka-event-processor/compare/0.1.3...0.1.4
 [0.1.5]: https://github.com/b-social/kafka-event-processor/compare/0.1.4...0.1.5
 [0.1.6]: https://github.com/b-social/kafka-event-processor/compare/0.1.5...0.1.6
-[Unreleased]: https://github.com/b-social/kafka-event-processor/compare/0.1.6...HEAD
+[0.1.7]: https://github.com/b-social/kafka-event-processor/compare/0.1.6...0.1.7
+[Unreleased]: https://github.com/b-social/kafka-event-processor/compare/0.1.7...HEAD
