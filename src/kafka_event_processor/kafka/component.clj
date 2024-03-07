@@ -49,7 +49,9 @@
     (with-parameter :kafka-ssl-keystore-password
       :default "")
     (with-parameter :kafka-ssl-key-password
-      :default "")))
+      :default "")
+    (with-parameter :kafka-partition-assignment-strategy
+                    :default "org.apache.kafka.clients.consumer.RangeAssignor")))
 
 (defn kafka-configuration
   [prefix]
