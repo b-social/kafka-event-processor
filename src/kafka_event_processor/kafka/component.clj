@@ -49,7 +49,9 @@
     (with-parameter :kafka-ssl-keystore-password
       :default "")
     (with-parameter :kafka-ssl-key-password
-      :default "")))
+      :default "")
+    (with-parameter :kafka-partition-assignment-strategy
+                    :default "org.apache.kafka.clients.consumer.RangeAssignor")))
 
 (defn kafka-configuration
   [prefix]
@@ -72,7 +74,8 @@
                   ssl-truststore-password
                   ssl-keystore-location
                   ssl-keystore-password
-                  ssl-key-password]} configuration
+                  ssl-key-password
+                  partition-assignment-strategy]} configuration
 
           consumer-config
           {ConsumerConfig/BOOTSTRAP_SERVERS_CONFIG
@@ -85,12 +88,14 @@
            auto-offset-reset-config
            ConsumerConfig/ENABLE_AUTO_COMMIT_CONFIG
            enable-auto-commit-config
-           :security.protocol       security-protocol
-           :ssl.truststore.location ssl-truststore-location
-           :ssl.truststore.password ssl-truststore-password
-           :ssl.keystore.location   ssl-keystore-location
-           :ssl.keystore.password   ssl-keystore-password
-           :ssl.key.password        ssl-key-password}]
+           ConsumerConfig/PARTITION_ASSIGNMENT_STRATEGY_CONFIG
+           partition-assignment-strategy
+           :security.protocol             security-protocol
+           :ssl.truststore.location       ssl-truststore-location
+           :ssl.truststore.password       ssl-truststore-password
+           :ssl.keystore.location         ssl-keystore-location
+           :ssl.keystore.password         ssl-keystore-password
+           :ssl.key.password              ssl-key-password}]
 
       (assoc component
         :consumer-config consumer-config)))
