@@ -88,13 +88,14 @@
            auto-offset-reset-config
            ConsumerConfig/ENABLE_AUTO_COMMIT_CONFIG
            enable-auto-commit-config
+           ConsumerConfig/PARTITION_ASSIGNMENT_STRATEGY_CONFIG
+           partition-assignment-strategy
            :security.protocol             security-protocol
            :ssl.truststore.location       ssl-truststore-location
            :ssl.truststore.password       ssl-truststore-password
            :ssl.keystore.location         ssl-keystore-location
            :ssl.keystore.password         ssl-keystore-password
-           :ssl.key.password              ssl-key-password
-           :partition.assignment.strategy partition-assignment-strategy}]
+           :ssl.key.password              ssl-key-password}]
 
       (assoc component
         :consumer-config consumer-config)))
