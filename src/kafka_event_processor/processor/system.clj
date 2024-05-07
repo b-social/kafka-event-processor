@@ -5,11 +5,29 @@
    [kafka-event-processor.utils.logging :as log]
    [kafka-event-processor.kafka.consumer-group :as kafka-consumer-group]
    [kafka-event-processor.processor.configuration :as processor-configuration]
-   [kafka-event-processor.processor.component :refer [new-processor]]))
+   [com.kroo.service-base.kafka-event-processor :as kep]
+   [clojure.string :as str]))
 
 (defn- ->keyword
   [parts]
-  (keyword (clojure.string/join parts)))
+  (keyword (str/join parts)))
+
+;; we have to make this a component
+;; so we can access other parts of the system to build up the config
++(defrecord ProcessorConfiguration
+    [consumer-configuration consumer-group-configuration]
+  component/Lifecycle
+  
+  (start [component]
+    (merge
+     component
+     {:kafka-consumer (assoc (:consumer-config consumer-configuration)
+                             :group.id (:id consumer-group-configuration))
+      :topics (set (:topics consumer-group-configuration))}))
+  
+  (stop [component]
+    component))
+
 
 (defn new-system
   "Creates a new kafka event processor.
@@ -100,37 +118,43 @@
     (log/log-info
       {processing-enabled processing-enabled?}
       "Processing enabled?")
-    (when processing-enabled?
-      (component/system-map
-        kafka-consumer-group-configuration
+    (component/system-map
+     kafka-consumer-group-configuration
+     (conf/resolve
+      (kafka-consumer-group configuration-overrides
+                            (kafka-consumer-group/kafka-consumer-group-configuration
+                             configuration-prefix
+                             processor-identifier)))
+
+     ;; this component is a total no-op
+     ;; (except it contains these other things we're referring to here)
+     ;; it's no longer used by this library, but leaving for backwards compatibility
+     kafka-consumer-group
+     (component/using
+      (kafka-consumer-group/new-kafka-consumer-group)
+      {:kafka         kafka
+       :configuration kafka-consumer-group-configuration})
+
+     processor-configuration
+     (component/using 
+      (map->ProcessorConfiguration
+       (merge 
+        {:enabled? processing-enabled?
+         :processor-id processor-identifier}
         (conf/resolve
-          (kafka-consumer-group configuration-overrides
-            (kafka-consumer-group/kafka-consumer-group-configuration
-              configuration-prefix
-              processor-identifier)))
+         (processor configuration-overrides
+                    (processor-configuration/processor-configuration
+                     configuration-prefix
+                     processor-identifier)))))
+      {:consumer-configuration kafka
+       :consumer-group-configuration kafka-consumer-group-configuration})
 
-        kafka-consumer-group
-        (component/using
-          (kafka-consumer-group/new-kafka-consumer-group)
-          {:kafka         kafka
-           :configuration kafka-consumer-group-configuration})
-
-        processor-configuration
-        (conf/resolve
-          (processor configuration-overrides
-            (processor-configuration/processor-configuration
-              configuration-prefix
-              processor-identifier)))
-
-        processor
-        (component/using
-          (new-processor processor-identifier)
-          (merge
-            {:kafka                kafka
-             :configuration        processor-configuration
-             :kafka-consumer-group kafka-consumer-group
-             :database             database
-             :event-handler        event-handler}
-            (when (some? rewind-check)
-              {:rewind-check rewind-check})
-            additional-dependencies))))))
+     processor
+     (component/using
+      (kep/map->KafkaEventProcessor {})
+      (merge {:configuration        processor-configuration
+              :database             database
+              :event-handler        event-handler}
+             (when (some? rewind-check)
+               {:rewind-check rewind-check})
+             additional-dependencies)))))

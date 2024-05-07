@@ -7,8 +7,8 @@
    [kafka-event-processor.test-support.system :as system]
    [kafka-event-processor.test-support.conditional-execution :refer [do-until]]
    [kafka-event-processor.utils.generators :as generators]
-   [kafka-event-processor.test-support.kafka.producer :as producer])
-  (:import [kafka_event_processor.processor.protocols EventHandler ExtractPayloadFromRecord]))
+   [kafka-event-processor.test-support.kafka.producer :as producer]
+   [kafka-event-processor.processor.protocols :refer [EventHandler ExtractPayloadFromRecord]]))
 
 (deftype AtomEventHandler
          [atom]
@@ -59,7 +59,7 @@
   (deftest processing
     (testing "processes events with event handler only"
       (let [events-atom (:atom @test-system)
-            ^EventHandler event-handler (:event-handler @test-system)
+            event-handler (:event-handler @test-system)
             event-id (generators/uuid)
             header-value "I'm a header for an event"
             message "I am an event"

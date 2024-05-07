@@ -7,8 +7,7 @@
    [kafka-event-processor.test-support.data :as data]
    [kafka-event-processor.test-support.conditional-execution :refer [do-until]]
    [kafka-event-processor.utils.generators :as generators]
-   [kafka-event-processor.test-support.kafka.producer :as producer])
-  (:import [kafka_event_processor.processor.protocols EventHandler]))
+   [kafka-event-processor.test-support.kafka.producer :as producer]))
 
 (defn test-case [& {:keys [resource-type throw-error?]}]
   (let [id (data/random-uuid)

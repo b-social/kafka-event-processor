@@ -8,6 +8,9 @@
     :as kafka]
    [kafka-event-processor.utils.logging :as log]))
 
+;; This description isn't really accurate, it creates a component that contains the
+;; _configuration_ for a kafka consumer, but nothing is actually started here.
+
 (defn new-system
   "Creates a new kafka consumer client.
 
