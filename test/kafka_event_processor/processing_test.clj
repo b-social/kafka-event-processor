@@ -6,8 +6,7 @@
    [kafka-event-processor.test-support.system :as system]
    [kafka-event-processor.test-support.conditional-execution :refer [do-until]]
    [kafka-event-processor.utils.generators :as generators]
-   [kafka-event-processor.test-support.kafka.producer :as producer])
-  (:import [kafka_event_processor.processor.protocols EventHandler]))
+   [kafka-event-processor.test-support.kafka.producer :as producer]))
 
 (let [database (database/new-database)
       kafka (kafka/new-kafka)
@@ -20,7 +19,7 @@
   (deftest processing
     (testing "processes events with event handler only"
       (let [events-atom (:atom @test-system)
-            ^EventHandler event-handler (:event-handler @test-system)
+            event-handler (:event-handler @test-system)
             event-id (generators/uuid)
             message "I am an event"
             event {:id event-id

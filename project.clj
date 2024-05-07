@@ -7,14 +7,15 @@
   :license {:name "The MIT License"
             :url  "https://opensource.org/licenses/MIT"}
 
-  :dependencies [[org.clojure/clojure "1.10.0"]
+  :dependencies [[org.clojure/clojure "1.11.2"]
                  [com.stuartsierra/component "1.0.0"]
                  [io.logicblocks/configurati "0.5.2"]
                  [org.apache.kafka/kafka-clients "2.3.0"]
                  [cambium/cambium.core "0.9.3"]
                  [cambium/cambium.codec-cheshire "0.9.3"]
                  [org.clojure/java.jdbc "0.7.11"]
-                 [com.datadoghq/dd-trace-ot "1.17.0"]]
+                 [com.datadoghq/dd-trace-ot "1.17.0"]
+                 [com.kroo.service-base/kafka-event-processor "0.110"]]
 
   :plugins [[lein-cloverage "1.1.2"]
             [lein-shell "0.5.0"]
@@ -26,7 +27,7 @@
             [lein-kibit "0.1.8"]
             [lein-bikeshed "0.5.2"]]
 
-  :profiles {:test {:dependencies
+  :profiles {:dev {:dependencies
                       [[eftest "0.5.9"]
                        [freeport "1.0.0"]
                        [com.opentable.components/otj-pg-embedded "1.0.0"]
@@ -45,6 +46,10 @@
 
   :bikeshed {:max-line-length 100}
 
+  :repositories [["kroo-github" {:url "https://maven.pkg.github.com/b-social/REPOSITORY"
+                                 :username :env/GITHUB_ACTOR
+		                 :password :env/GITHUB_TOKEN}]]
+  
   :codox
   {:namespaces  [#"^kafka-event-processor\."]
    :metadata    {:doc/format :markdown}
@@ -72,7 +77,7 @@
    ["vcs" "tag"]
    ["vcs" "push"]]
 
-  :aliases {"test"      ["with-profile" "test" "eftest" ":all"]
+  :aliases {"test"      ["with-profile" "dev" "eftest" ":all"]
             "precommit" ["do"
                          ["check"]
                          ["kibit" "--replace"]
@@ -81,3 +86,4 @@
                           "--name-collisions" "false"
                           "--verbose" "true"]
                          ["test"]]})
+
