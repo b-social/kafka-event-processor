@@ -7,7 +7,7 @@
   :license {:name "The MIT License"
             :url  "https://opensource.org/licenses/MIT"}
 
-  :dependencies [[org.clojure/clojure "1.10.0"]
+  :dependencies [[org.clojure/clojure "1.11.2"]
                  [com.stuartsierra/component "1.0.0"]
                  [io.logicblocks/configurati "0.5.2"]
                  [org.apache.kafka/kafka-clients "2.3.0"]
